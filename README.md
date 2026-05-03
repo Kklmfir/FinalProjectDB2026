@@ -38,37 +38,38 @@ A modern, premium financial management web application built with PHP Native, My
 ## 📁 Project Structure
 
 ```
-final-project-db2026/
+FinalProjectDB2026/
 │
-├── main.php                          # Main dashboard
-├── .env                              # Environment configuration
+├── main.php                          # Modern fintech dashboard
+├── menu.php                          # Redirect → main.php
+├── .env.example                      # Environment template
 ├── .gitignore                        # Git ignore rules
 │
 ├── /config/
-│   ├── database.php                  # Database connection handler
-│   ├── app.php                       # Application configuration
-│   ├── mysql.php                     # MySQL specific config
-│   └── supabase.php                  # Supabase config
+│   ├── env_loader.php                # .env file loader
+│   ├── database.php                  # Universal connection handler
+│   ├── db_local.php                  # MySQL configuration
+│   └── db_supabase.php               # Supabase PostgreSQL config
 │
 ├── /components/
 │   ├── header.php                    # HTML head and navigation
 │   ├── sidebar.php                   # Sidebar navigation
 │   ├── navbar.php                    # Top navigation bar
-│   ├── footer.php                    # Page footer
-│   └── alerts.php                    # Alert messages
+│   ├── footer.php                    # Page footer with scripts
+│   └── alerts.php                    # Alert/flash messages
 │
 ├── /assets/
-│   ├── /css/
-│   │   └── style.css                 # Custom styles
-│   ├── /js/
-│   │   └── app.js                   # JavaScript functionality
-│   ├── /img/                        # Images
-│   └── /icons/                      # Icons
+│   ├── /css/style.css                # Fintech design system
+│   ├── /js/app.js                    # JavaScript (sidebar, charts, DB switcher)
+│   └── /icons/                       # Icons directory
 │
 ├── /helpers/
 │   ├── functions.php                 # Utility functions
 │   ├── validation.php                # Input validation
-│   └── security.php                  # Security functions
+│   └── security.php                  # CSRF, XSS, sanitization
+│
+├── /api/
+│   └── switch_db.php                 # Database mode switcher endpoint
 │
 └── /src/
     ├── /budget/                      # Budget CRUD
@@ -78,7 +79,7 @@ final-project-db2026/
     ├── /goal/                        # Goal CRUD
     ├── /pocket/                      # Pocket CRUD
     ├── /sub_category/                # Sub Category CRUD
-    ├── /transactions/                # Transactions CRUD
+    ├── /transaction/                 # Transactions CRUD
     └── /transfer/                    # Transfer CRUD
 ```
 
@@ -108,12 +109,15 @@ final-project-db2026/
 2. Run `insert-data.sql` to populate sample data
 
 ### Step 2: Environment Configuration
-1. Copy `.env` file and configure:
+1. Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+2. Configure the `.env` file:
 ```env
 APP_ENV=local
 APP_DEBUG=true
-
-DB_CONNECTION=mysql
+DB_MODE=local
 
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
@@ -146,9 +150,10 @@ The app supports dual database modes:
 - Real-time features
 - Cross-device access
 
-Switch modes in `.env`:
+Switch modes in `.env` or via the dashboard DB switcher:
 ```env
-DB_CONNECTION=mysql    # or 'supabase'
+DB_MODE=local     # Use MySQL (default)
+DB_MODE=supabase  # Use Supabase PostgreSQL
 ```
 
 ## 📊 CRUD Operations

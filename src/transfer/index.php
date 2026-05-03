@@ -1,50 +1,60 @@
-<?php 
-include 'transfer.php'; 
+<?php
+require_once __DIR__ . '/transfer.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle  = 'Transfer';
+$activePage = 'transfer';
+$rootPath   = '../../';
+include $rootPath . 'components/header.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>MDG - Data Transfer</title>
-</head>
-<body>
-    <h2>Data Transfer Antar Kantong</h2>
-    
-    <p><a href="add.php">+ Tambah Transfer Baru</a></p>
-
-    <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <tr>
-            <th>Transfer ID</th>
-            <th>Source Pocket ID</th>
-            <th>Target Pocket ID</th>
-            <th>Jumlah Transfer</th>
-            <th>Tanggal Transfer</th>
-            <th>Aksi</th>
-        </tr>
-
+<div class="mdg-layout">
+<?php include $rootPath . 'components/sidebar.php'; ?>
+<div class="mdg-main">
+<?php include $rootPath . 'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-arrow-right-arrow-left me-2 text-primary-mdg"></i>Transfer</h1>
+      <p class="page-subtitle">Catat transfer antar pocket</p>
+    </div>
+    <a href="add.php" class="btn-mdg-primary"><i class="fas fa-plus"></i> Tambah Transfer</a>
+  </div>
+  <?php include $rootPath . 'components/alerts.php'; ?>
+  <div class="mdg-table-wrapper">
+    <div class="mdg-table-header"><h5><i class="fas fa-list me-2"></i>Data Transfer</h5></div>
+    <div class="table-responsive p-3">
+      <table class="table mdg-table mdg-datatable">
+        <thead><tr>
+          <th>ID</th>
+          <th>Source Pocket</th>
+          <th>Target Pocket</th>
+          <th>Jumlah</th>
+          <th>Tanggal</th>
+          <th>Aksi</th>
+        </tr></thead>
+        <tbody>
         <?php
-        $sql = "SELECT * FROM $table ORDER BY $primary_key DESC";   // DESC agar yang terbaru di atas
+        $sql    = "SELECT * FROM $table ORDER BY $primary_key ASC";
         $result = mysqli_query($conn, $sql);
-
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>";
-            echo "<td>" . $row['Transfer_ID'] . "</td>";
-            echo "<td>" . $row['Source_Pocket_ID'] . "</td>";
-            echo "<td>" . $row['Target_Pocket_ID'] . "</td>";
-            echo "<td>Rp " . number_format($row['Transfer_Amount'], 0, ',', '.') . "</td>";
-            echo "<td>" . $row['Transfer_Date'] . "</td>";
-            echo "<td>
-                    <a href='edit.php?id=" . $row['Transfer_ID'] . "'>Edit</a> | 
-                    <a href='delete.php?id=" . $row['Transfer_ID'] . "' 
-                       onclick=\"return confirm('Yakin ingin menghapus transfer ini?')\">Hapus</a>
-                  </td>";
-            echo "</tr>";
-        }
+        while ($row = mysqli_fetch_assoc($result)):
         ?>
-    </table>
-
-    <br>
-    <a href="index.php">Refresh</a>
-</body>
-</html>
+          <tr>
+            <td><?= e($row['Transfer_ID'] ?? '') ?></td>
+            <td><?= e($row['Source_Pocket_ID'] ?? '') ?></td>
+            <td><?= e($row['Target_Pocket_ID'] ?? '') ?></td>
+            <td><?= e($row['Transfer_Amount'] ?? '') ?></td>
+            <td><?= e($row['Transfer_Date'] ?? '') ?></td>
+            <td>
+              <a href="edit.php?id=<?= (int)$row['Transfer_ID'] ?>" class="btn-mdg-secondary" style="padding:.3rem .7rem;font-size:.78rem"><i class="fas fa-pen"></i> Edit</a>
+              <a href="delete.php?id=<?= (int)$row['Transfer_ID'] ?>" class="btn-mdg-danger" style="padding:.3rem .7rem;font-size:.78rem" onclick="return confirmDelete('Transfer #<?= (int)$row['Transfer_ID'] ?>')"><i class="fas fa-trash"></i> Hapus</a>
+            </td>
+          </tr>
+        <?php endwhile; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+<?php include $rootPath . 'components/footer.php'; ?>
+</div>
+</div>

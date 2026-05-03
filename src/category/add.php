@@ -1,58 +1,33 @@
-<?php include 'category.php'; ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Tambah Category Baru</title>
-</head>
-<body>
-    <h2>Tambah Category Baru</h2>
-    
-    <form action="add.php" method="POST">
-        <table cellpadding="8">
-            <tr>
-                <td>Nama Category</td>
-                <td><input type="text" name="Category_Name" required style="width:350px;"></td>
-            </tr>
-            <tr>
-                <td>Tipe Category</td>
-                <td>
-                    <select name="Category_Type" required>
-                        <option value="">-- Pilih Tipe --</option>
-                        <option value="Income">Income (Penghasilan)</option>
-                        <option value="Expense">Expense (Pengeluaran)</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td>Icon Code</td>
-                <td><input type="text" name="Icon_Code" required placeholder="contoh: ic_delivery_bot"></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="submit">Simpan Category</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+<?php
+require_once __DIR__ . '/category.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Tambah Kategori'; $activePage='category'; $rootPath='../../'; $alertError='';
+if (isset($_POST['submit'])) {
+    $Category_Name = mysqli_real_escape_string($conn, sanitizeInput($_POST['Category_Name']??''));
+    $Category_Type = mysqli_real_escape_string($conn, sanitizeInput($_POST['Category_Type']??''));
+    $Icon_Code     = mysqli_real_escape_string($conn, sanitizeInput($_POST['Icon_Code']??''));
+    $sql = "INSERT INTO $table (Category_Name, Category_Type, Icon_Code) VALUES ('$Category_Name','$Category_Type','$Icon_Code')";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Kategori berhasil ditambahkan!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
+}
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-plus-circle me-2 text-primary-mdg"></i>Tambah Kategori</h1><nav class="mdg-breadcrumb"><a href="index.php">Kategori</a> / Tambah</nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Form Kategori Baru</span></div><div class="mdg-card-body">
+    <form action="add.php" method="POST"><?= csrfField() ?>
+      <div class="mdg-form-group"><label class="form-label">Nama Kategori <span class="text-danger">*</span></label><input type="text" class="form-control" name="Category_Name" value="<?= e($_POST['Category_Name']??'') ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Tipe Kategori <span class="text-danger">*</span></label>
+        <select class="form-select" name="Category_Type" required>
+          <option value="">-- Pilih Tipe --</option>
+          <option value="Income" <?= (($_POST['Category_Type']??'')==='Income')?'selected':'' ?>>Income (Pemasukan)</option>
+          <option value="Expense" <?= (($_POST['Category_Type']??'')==='Expense')?'selected':'' ?>>Expense (Pengeluaran)</option>
+        </select>
+      </div>
+      <div class="mdg-form-group"><label class="form-label">Icon Code <span class="text-danger">*</span></label><input type="text" class="form-control" name="Icon_Code" value="<?= e($_POST['Icon_Code']??'') ?>" placeholder="contoh: ic_delivery_bot" required></div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="submit" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-
-    <?php
-    if (isset($_POST['submit'])) {
-        $Category_Name = mysqli_real_escape_string($conn, $_POST['Category_Name']);
-        $Category_Type = mysqli_real_escape_string($conn, $_POST['Category_Type']);
-        $Icon_Code     = mysqli_real_escape_string($conn, $_POST['Icon_Code']);
-
-        $sql = "INSERT INTO $table (Category_Name, Category_Type, Icon_Code) 
-                VALUES ('$Category_Name', '$Category_Type', '$Icon_Code')";
-
-        if (mysqli_query($conn, $sql)) {
-            echo "<script>alert('Category berhasil ditambahkan!'); window.location='index.php';</script>";
-        } else {
-            echo "Error: " . mysqli_error($conn);
-        }
-    }
-    ?>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

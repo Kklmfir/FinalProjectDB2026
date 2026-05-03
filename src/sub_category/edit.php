@@ -1,79 +1,32 @@
-<?php 
-include 'sub_category.php';
-
-$id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Sub_Category_ID']) ? intval($_POST['Sub_Category_ID']) : 0);
-
-if ($id <= 0) {
-    die("ID tidak valid!");
-}
-
-// Proses Update
+<?php
+require_once __DIR__ . '/sub_category.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Edit Sub Kategori'; $activePage='sub_category'; $rootPath='../../'; $alertError='';
+$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['Sub_Category_ID']) ? (int)$_POST['Sub_Category_ID'] : 0);
+if ($id <= 0) { header('Location: index.php'); exit; }
 if (isset($_POST['update'])) {
-    $Category_ID = intval($_POST['Category_ID']);
-    $Sub_Name    = mysqli_real_escape_string($conn, $_POST['Sub_Name']);
-    $Notes       = mysqli_real_escape_string($conn, $_POST['Notes']);
-
-    $sql = "UPDATE $table SET 
-                Category_ID = $Category_ID,
-                Sub_Name = '$Sub_Name',
-                Notes = '$Notes'
-            WHERE $primary_key = $id";
-
-    if (mysqli_query($conn, $sql)) {
-        echo "<script>
-                alert('Sub Category berhasil diupdate!');
-                window.location='index.php';
-              </script>";
-        exit();
-    } else {
-        echo "Error: " . mysqli_error($conn);
-    }
+    $Category_ID = sanitizeInt($_POST['Category_ID']??0);
+    $Sub_Name    = mysqli_real_escape_string($conn, sanitizeInput($_POST['Sub_Name']??''));
+    $Notes       = mysqli_real_escape_string($conn, sanitizeInput($_POST['Notes']??''));
+    $sql = "UPDATE $table SET Category_ID=$Category_ID, Sub_Name='$Sub_Name', Notes='$Notes' WHERE $primary_key=$id";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Sub Kategori berhasil diperbarui!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
 }
-
-// Ambil data untuk edit
-$sql = "SELECT * FROM $table WHERE $primary_key = $id";
-$result = mysqli_query($conn, $sql);
-$row = mysqli_fetch_assoc($result);
-
-if (!$row) {
-    die("Data tidak ditemukan! ID: " . $id);
-}
-?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Sub Category</title>
-</head>
-<body>
-    <h2>Edit Sub Category - ID: <?php echo $row['Sub_Category_ID']; ?></h2>
-    
-    <form action="edit.php" method="POST">
-        <input type="hidden" name="Sub_Category_ID" value="<?php echo $row['Sub_Category_ID']; ?>">
-
-        <table cellpadding="8">
-            <tr>
-                <td>Category ID</td>
-                <td><input type="number" name="Category_ID" 
-                    value="<?php echo $row['Category_ID']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Nama Sub Category</td>
-                <td><input type="text" name="Sub_Name" 
-                    value="<?php echo htmlspecialchars($row['Sub_Name']); ?>" required style="width:350px;"></td>
-            </tr>
-            <tr>
-                <td>Notes / Keterangan</td>
-                <td><textarea name="Notes" rows="4" cols="50"><?php echo htmlspecialchars($row['Notes']); ?></textarea></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="update">Update Sub Category</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+$row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM $table WHERE $primary_key=$id"));
+if (!$row) { header('Location: index.php'); exit; }
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-pen me-2 text-primary-mdg"></i>Edit Sub Kategori</h1><nav class="mdg-breadcrumb"><a href="index.php">Sub Kategori</a> / Edit #<?= $id ?></nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Edit Data Sub Kategori</span></div><div class="mdg-card-body">
+    <form action="edit.php" method="POST"><?= csrfField() ?>
+      <input type="hidden" name="Sub_Category_ID" value="<?= $id ?>">
+      <div class="mdg-form-group"><label class="form-label">Category ID <span class="text-danger">*</span></label><input type="number" class="form-control" name="Category_ID" value="<?= e($row['Category_ID']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Nama Sub Kategori <span class="text-danger">*</span></label><input type="text" class="form-control" name="Sub_Name" value="<?= e($row['Sub_Name']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Catatan</label><textarea class="form-control" name="Notes" rows="3"><?= e($row['Notes']) ?></textarea></div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="update" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan Perubahan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

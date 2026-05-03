@@ -1,87 +1,36 @@
-<?php 
-include 'goal.php';
-
-$id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Goal_ID']) ? intval($_POST['Goal_ID']) : 0);
-
-if ($id <= 0) {
-    die("ID tidak valid!");
-}
-
-// Proses Update
+<?php
+require_once __DIR__ . '/goal.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Edit Goal'; $activePage='goal'; $rootPath='../../'; $alertError='';
+$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['Goal_ID']) ? (int)$_POST['Goal_ID'] : 0);
+if ($id <= 0) { header('Location: index.php'); exit; }
 if (isset($_POST['update'])) {
-    $Pocket_ID      = intval($_POST['Pocket_ID']);
-    $Goal_Name      = mysqli_real_escape_string($conn, $_POST['Goal_Name']);
-    $Target_Amount  = floatval($_POST['Target_Amount']);
-    $Deadline_Date  = $_POST['Deadline_Date'];
-
-    $sql = "UPDATE $table SET 
-                Pocket_ID = $Pocket_ID,
-                Goal_Name = '$Goal_Name',
-                Target_Amount = $Target_Amount,
-                Deadline_Date = '$Deadline_Date'
-            WHERE $primary_key = $id";
-
-    if (mysqli_query($conn, $sql)) {
-        echo "<script>
-                alert('Goal berhasil diupdate!');
-                window.location='index.php';
-              </script>";
-        exit();
-    } else {
-        echo "Error: " . mysqli_error($conn);
-    }
+    $Pocket_ID     = sanitizeInt($_POST['Pocket_ID']??0);
+    $Goal_Name     = mysqli_real_escape_string($conn, sanitizeInput($_POST['Goal_Name']??''));
+    $Target_Amount = sanitizeFloat($_POST['Target_Amount']??0);
+    $Current_Amount= sanitizeFloat($_POST['Current_Amount']??0);
+    $Deadline      = sanitizeInput($_POST['Deadline']??'');
+    $sql = "UPDATE $table SET Pocket_ID=$Pocket_ID, Goal_Name='$Goal_Name', Target_Amount=$Target_Amount, Current_Amount=$Current_Amount, Deadline='$Deadline' WHERE $primary_key=$id";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Goal berhasil diperbarui!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
 }
-
-// Ambil data untuk edit
-$sql = "SELECT * FROM $table WHERE $primary_key = $id";
-$result = mysqli_query($conn, $sql);
-$row = mysqli_fetch_assoc($result);
-
-if (!$row) {
-    die("Data tidak ditemukan! ID: " . $id);
-}
-?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Goal</title>
-</head>
-<body>
-    <h2>Edit Goal - ID: <?php echo $row['Goal_ID']; ?></h2>
-    
-    <form action="edit.php" method="POST">
-        <input type="hidden" name="Goal_ID" value="<?php echo $row['Goal_ID']; ?>">
-
-        <table cellpadding="8">
-            <tr>
-                <td>Pocket ID</td>
-                <td><input type="number" name="Pocket_ID" 
-                    value="<?php echo $row['Pocket_ID']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Nama Goal</td>
-                <td><input type="text" name="Goal_Name" 
-                    value="<?php echo htmlspecialchars($row['Goal_Name']); ?>" required style="width:350px;"></td>
-            </tr>
-            <tr>
-                <td>Target Amount (Rp)</td>
-                <td><input type="number" name="Target_Amount" step="0.01" 
-                    value="<?php echo $row['Target_Amount']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Deadline Date</td>
-                <td><input type="date" name="Deadline_Date" 
-                    value="<?php echo $row['Deadline_Date']; ?>" required></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="update">Update Goal</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+$row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM $table WHERE $primary_key=$id"));
+if (!$row) { header('Location: index.php'); exit; }
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-pen me-2 text-primary-mdg"></i>Edit Goal</h1><nav class="mdg-breadcrumb"><a href="index.php">Goal</a> / Edit #<?= $id ?></nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Edit Data Goal</span></div><div class="mdg-card-body">
+    <form action="edit.php" method="POST"><?= csrfField() ?>
+      <input type="hidden" name="Goal_ID" value="<?= $id ?>">
+      <div class="mdg-form-group"><label class="form-label">Pocket ID <span class="text-danger">*</span></label><input type="number" class="form-control" name="Pocket_ID" value="<?= e($row['Pocket_ID']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Nama Goal <span class="text-danger">*</span></label><input type="text" class="form-control" name="Goal_Name" value="<?= e($row['Goal_Name']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Target Amount (Rp) <span class="text-danger">*</span></label><input type="number" class="form-control" name="Target_Amount" value="<?= e($row['Target_Amount']) ?>" step="0.01" min="0" required></div>
+      <div class="mdg-form-group"><label class="form-label">Tabungan Saat Ini (Rp)</label><input type="number" class="form-control" name="Current_Amount" value="<?= e($row['Current_Amount']) ?>" step="0.01" min="0"></div>
+      <div class="mdg-form-group"><label class="form-label">Deadline <span class="text-danger">*</span></label><input type="date" class="form-control" name="Deadline" value="<?= e($row['Deadline']) ?>" required></div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="update" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan Perubahan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

@@ -1,50 +1,60 @@
-<?php 
-include 'budget.php'; 
+<?php
+require_once __DIR__ . '/budget.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle  = 'Budget';
+$activePage = 'budget';
+$rootPath   = '../../';
+include $rootPath . 'components/header.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>MDG - Data Budget</title>
-</head>
-<body>
-    <h2>Data Budget</h2>
-    
-    <p><a href="add.php">+ Tambah Budget Baru</a></p>
-
-    <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <tr>
-            <th>Budget ID</th>
-            <th>Category ID</th>
-            <th>Batas Bulanan</th>
-            <th>Tanggal Mulai</th>
-            <th>Tanggal Selesai</th>
-            <th>Aksi</th>
-        </tr>
-
+<div class="mdg-layout">
+<?php include $rootPath . 'components/sidebar.php'; ?>
+<div class="mdg-main">
+<?php include $rootPath . 'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-piggy-bank me-2 text-primary-mdg"></i>Budget</h1>
+      <p class="page-subtitle">Kelola batas budget bulanan</p>
+    </div>
+    <a href="add.php" class="btn-mdg-primary"><i class="fas fa-plus"></i> Tambah Budget</a>
+  </div>
+  <?php include $rootPath . 'components/alerts.php'; ?>
+  <div class="mdg-table-wrapper">
+    <div class="mdg-table-header"><h5><i class="fas fa-list me-2"></i>Data Budget</h5></div>
+    <div class="table-responsive p-3">
+      <table class="table mdg-table mdg-datatable">
+        <thead><tr>
+          <th>ID</th>
+          <th>Category ID</th>
+          <th>Batas Bulanan</th>
+          <th>Tgl Mulai</th>
+          <th>Tgl Selesai</th>
+          <th>Aksi</th>
+        </tr></thead>
+        <tbody>
         <?php
-        $sql = "SELECT * FROM $table ORDER BY $primary_key ASC";
+        $sql    = "SELECT * FROM $table ORDER BY $primary_key ASC";
         $result = mysqli_query($conn, $sql);
-
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>";
-            echo "<td>" . $row['Budget_ID'] . "</td>";
-            echo "<td>" . $row['Category_ID'] . "</td>";
-            echo "<td>Rp " . number_format($row['Monthly_Limit'], 0, ',', '.') . "</td>";
-            echo "<td>" . $row['Start_Date'] . "</td>";
-            echo "<td>" . $row['End_Date'] . "</td>";
-            echo "<td>
-                    <a href='edit.php?id=" . $row['Budget_ID'] . "'>Edit</a> | 
-                    <a href='delete.php?id=" . $row['Budget_ID'] . "' 
-                       onclick=\"return confirm('Yakin ingin menghapus budget ini?')\">Hapus</a>
-                  </td>";
-            echo "</tr>";
-        }
+        while ($row = mysqli_fetch_assoc($result)):
         ?>
-    </table>
-
-    <br>
-    <a href="index.php">Refresh</a>
-</body>
-</html>
+          <tr>
+            <td><?= e($row['Budget_ID'] ?? '') ?></td>
+            <td><?= e($row['Category_ID'] ?? '') ?></td>
+            <td><?= e($row['Monthly_Limit'] ?? '') ?></td>
+            <td><?= e($row['Start_Date'] ?? '') ?></td>
+            <td><?= e($row['End_Date'] ?? '') ?></td>
+            <td>
+              <a href="edit.php?id=<?= (int)$row['Budget_ID'] ?>" class="btn-mdg-secondary" style="padding:.3rem .7rem;font-size:.78rem"><i class="fas fa-pen"></i> Edit</a>
+              <a href="delete.php?id=<?= (int)$row['Budget_ID'] ?>" class="btn-mdg-danger" style="padding:.3rem .7rem;font-size:.78rem" onclick="return confirmDelete('Budget #<?= (int)$row['Budget_ID'] ?>')"><i class="fas fa-trash"></i> Hapus</a>
+            </td>
+          </tr>
+        <?php endwhile; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+<?php include $rootPath . 'components/footer.php'; ?>
+</div>
+</div>
