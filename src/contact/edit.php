@@ -1,171 +1,80 @@
-<?php
-require_once '../../config/app.php';
-require_once '../../config/database.php';
-require_once '../../helpers/functions.php';
-require_once '../../helpers/validation.php';
-require_once '../../helpers/security.php';
+<?php 
+include 'db_contact.php';
 
-$pdo = require '../../config/database.php';
+$id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Contact_ID']) ? intval($_POST['Contact_ID']) : 0);
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
-if (!$id) {
-    header('Location: index.php');
-    exit;
+if ($id <= 0) {
+    die("ID tidak valid!");
 }
 
-// Fetch contact
-$stmt = $pdo->prepare("SELECT * FROM Contact WHERE Contact_ID = ?");
-$stmt->execute([$id]);
-$contact = $stmt->fetch();
+// Proses Update
+if (isset($_POST['update'])) {
+    $Contact_Name   = mysqli_real_escape_string($conn, $_POST['Contact_Name']);
+    $Phone_Number   = mysqli_real_escape_string($conn, $_POST['Phone_Number']);
+    $Relation_Type  = mysqli_real_escape_string($conn, $_POST['Relation_Type']);
 
-if (!$contact) {
-    $_SESSION['error'] = 'Contact not found!';
-    header('Location: index.php');
-    exit;
-}
+    $sql = "UPDATE $table SET 
+                Contact_Name = '$Contact_Name',
+                Phone_Number = '$Phone_Number',
+                Relation_Type = '$Relation_Type'
+            WHERE $primary_key = $id";
 
-$errors = [];
-$formData = $contact;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    validateCSRF();
-
-    $formData = [
-        'name' => sanitize($_POST['name'] ?? ''),
-        'phone' => sanitize($_POST['phone'] ?? ''),
-        'relation_type' => sanitize($_POST['relation_type'] ?? ''),
-    ];
-
-    $validation = sanitizeAndValidate($formData, [
-        'name' => 'required',
-        'phone' => 'required',
-        'relation_type' => 'required',
-    ]);
-
-    if ($validation['errors']) {
-        $errors = $validation['errors'];
+    if (mysqli_query($conn, $sql)) {
+        echo "<script>
+                alert('Contact berhasil diupdate!');
+                window.location='index.php';
+              </script>";
+        exit();
     } else {
-        try {
-            $stmt = $pdo->prepare("UPDATE Contact SET Contact_Name = ?, Phone_Number = ?, Relation_Type = ? WHERE Contact_ID = ?");
-            $stmt->execute([$formData['name'], $formData['phone'], $formData['relation_type'], $id]);
-
-            $_SESSION['success'] = 'Contact updated successfully!';
-            header('Location: index.php');
-            exit;
-        } catch (PDOException $e) {
-            $errors[] = 'Failed to update contact: ' . $e->getMessage();
-        }
+        echo "Error: " . mysqli_error($conn);
     }
 }
 
-include '../../components/header.php';
+// Ambil data untuk edit
+$sql = "SELECT * FROM $table WHERE $primary_key = $id";
+$result = mysqli_query($conn, $sql);
+$row = mysqli_fetch_assoc($result);
+
+if (!$row) {
+    die("Data tidak ditemukan! ID: " . $id);
+}
 ?>
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h3 mb-0 text-gray-800">
-                    <i class="fas fa-edit text-primary"></i> Edit Contact
-                </h1>
-                <p class="text-muted">Update contact information</p>
-            </div>
-            <a href="index.php" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to List
-            </a>
-        </div>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Contact</title>
+</head>
+<body>
+    <h2>Edit Contact - ID: <?php echo $row['Contact_ID']; ?></h2>
+    
+    <form action="edit.php" method="POST">
+        <input type="hidden" name="Contact_ID" value="<?php echo $row['Contact_ID']; ?>">
 
-<?php include '../../components/alerts.php'; ?>
-
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-edit"></i> Contact Details
-                </h6>
-            </div>
-            <div class="card-body">
-                <?php if ($errors): ?>
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        <?php foreach ($errors as $error): ?>
-                        <li><?php echo htmlspecialchars($error); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
-
-                <form method="POST">
-                    <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo $_SESSION[CSRF_TOKEN_NAME]; ?>">
-
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Contact Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control <?php echo in_array('Name is required', $errors) ? 'is-invalid' : ''; ?>"
-                               id="name" name="name" required
-                               value="<?php echo htmlspecialchars($formData['Contact_Name']); ?>"
-                               placeholder="Enter contact name">
-                        <div class="invalid-feedback">
-                            Please provide a valid contact name.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control <?php echo in_array('Phone is required', $errors) ? 'is-invalid' : ''; ?>"
-                               id="phone" name="phone" required
-                               value="<?php echo htmlspecialchars($formData['Phone_Number']); ?>"
-                               placeholder="Enter phone number">
-                        <div class="invalid-feedback">
-                            Please provide a valid phone number.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="relation_type" class="form-label">Relation Type <span class="text-danger">*</span></label>
-                        <select class="form-control <?php echo in_array('Relation type is required', $errors) ? 'is-invalid' : ''; ?>"
-                                id="relation_type" name="relation_type" required>
-                            <option value="">Select relation type</option>
-                            <option value="Family" <?php echo $formData['Relation_Type'] === 'Family' ? 'selected' : ''; ?>>Family</option>
-                            <option value="Friend" <?php echo $formData['Relation_Type'] === 'Friend' ? 'selected' : ''; ?>>Friend</option>
-                            <option value="Colleague" <?php echo $formData['Relation_Type'] === 'Colleague' ? 'selected' : ''; ?>>Colleague</option>
-                            <option value="Business" <?php echo $formData['Relation_Type'] === 'Business' ? 'selected' : ''; ?>>Business</option>
-                            <option value="Other" <?php echo $formData['Relation_Type'] === 'Other' ? 'selected' : ''; ?>>Other</option>
-                        </select>
-                        <div class="invalid-feedback">
-                            Please select a relation type.
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Update Contact
-                        </button>
-                        <a href="index.php" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancel
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-info-circle"></i> Contact Info
-                </h6>
-            </div>
-            <div class="card-body">
-                <p><strong>ID:</strong> <?php echo $contact['Contact_ID']; ?></p>
-                <p><strong>Related Debts/Loans:</strong> 0</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<?php include '../../components/footer.php'; ?>
+        <table cellpadding="8">
+            <tr>
+                <td>Nama Kontak</td>
+                <td><input type="text" name="Contact_Name" 
+                    value="<?php echo htmlspecialchars($row['Contact_Name']); ?>" required style="width:350px;"></td>
+            </tr>
+            <tr>
+                <td>Nomor Telepon</td>
+                <td><input type="text" name="Phone_Number" 
+                    value="<?php echo htmlspecialchars($row['Phone_Number']); ?>" required></td>
+            </tr>
+            <tr>
+                <td>Jenis Hubungan</td>
+                <td><input type="text" name="Relation_Type" 
+                    value="<?php echo htmlspecialchars($row['Relation_Type']); ?>" required></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button type="submit" name="update">Update Contact</button>
+                    <a href="index.php">Batal</a>
+                </td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>

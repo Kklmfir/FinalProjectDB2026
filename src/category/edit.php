@@ -1,153 +1,84 @@
-<?php
-require_once '../../config/app.php';
-require_once '../../config/database.php';
-require_once '../../helpers/functions.php';
-require_once '../../helpers/validation.php';
-require_once '../../helpers/security.php';
+<?php 
+include 'db_category.php';
 
-$pdo = require '../../config/database.php';
+$id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Category_ID']) ? intval($_POST['Category_ID']) : 0);
 
-$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
-if (!$id) {
-    header('Location: index.php');
-    exit;
+if ($id <= 0) {
+    die("ID tidak valid!");
 }
 
-// Fetch category
-$stmt = $pdo->prepare("SELECT * FROM category WHERE id = ?");
-$stmt->execute([$id]);
-$category = $stmt->fetch();
+// Proses Update
+if (isset($_POST['update'])) {
+    $Category_Name = mysqli_real_escape_string($conn, $_POST['Category_Name']);
+    $Category_Type = mysqli_real_escape_string($conn, $_POST['Category_Type']);
+    $Icon_Code     = mysqli_real_escape_string($conn, $_POST['Icon_Code']);
 
-if (!$category) {
-    $_SESSION['error'] = 'Category not found!';
-    header('Location: index.php');
-    exit;
-}
+    $sql = "UPDATE $table SET 
+                Category_Name = '$Category_Name',
+                Category_Type = '$Category_Type',
+                Icon_Code = '$Icon_Code'
+            WHERE $primary_key = $id";
 
-$errors = [];
-$formData = $category;
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    validateCSRF();
-
-    $formData = [
-        'name' => sanitize($_POST['name'] ?? ''),
-        'description' => sanitize($_POST['description'] ?? ''),
-    ];
-
-    $validation = sanitizeAndValidate($formData, [
-        'name' => 'required',
-        'description' => 'required',
-    ]);
-
-    if ($validation['errors']) {
-        $errors = $validation['errors'];
+    if (mysqli_query($conn, $sql)) {
+        echo "<script>
+                alert('Category berhasil diupdate!');
+                window.location='index.php';
+              </script>";
+        exit();
     } else {
-        try {
-            $stmt = $pdo->prepare("UPDATE category SET name = ?, description = ? WHERE id = ?");
-            $stmt->execute([$formData['name'], $formData['description'], $id]);
-
-            $_SESSION['success'] = 'Category updated successfully!';
-            header('Location: index.php');
-            exit;
-        } catch (PDOException $e) {
-            $errors[] = 'Failed to update category: ' . $e->getMessage();
-        }
+        echo "Error: " . mysqli_error($conn);
     }
 }
 
-include '../../components/header.php';
+// Ambil data untuk form
+$sql = "SELECT * FROM $table WHERE $primary_key = $id";
+$result = mysqli_query($conn, $sql);
+$row = mysqli_fetch_assoc($result);
+
+if (!$row) {
+    die("Data tidak ditemukan! ID: " . $id);
+}
 ?>
 
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="h3 mb-0 text-gray-800">
-                    <i class="fas fa-edit text-primary"></i> Edit Category
-                </h1>
-                <p class="text-muted">Update category information</p>
-            </div>
-            <a href="index.php" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to List
-            </a>
-        </div>
-    </div>
-</div>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Category</title>
+</head>
+<body>
+    <h2>Edit Category - ID: <?php echo $row['Category_ID']; ?></h2>
+    
+    <form action="edit.php" method="POST">
+        <input type="hidden" name="Category_ID" value="<?php echo $row['Category_ID']; ?>">
 
-<?php include '../../components/alerts.php'; ?>
-
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-edit"></i> Category Details
-                </h6>
-            </div>
-            <div class="card-body">
-                <?php if ($errors): ?>
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        <?php foreach ($errors as $error): ?>
-                        <li><?php echo htmlspecialchars($error); ?></li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-                <?php endif; ?>
-
-                <form method="POST">
-                    <input type="hidden" name="<?php echo CSRF_TOKEN_NAME; ?>" value="<?php echo $_SESSION[CSRF_TOKEN_NAME]; ?>">
-
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Category Name <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control <?php echo in_array('Name is required', $errors) ? 'is-invalid' : ''; ?>"
-                               id="name" name="name" required
-                               value="<?php echo htmlspecialchars($formData['name']); ?>"
-                               placeholder="Enter category name">
-                        <div class="invalid-feedback">
-                            Please provide a valid category name.
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
-                        <textarea class="form-control <?php echo in_array('Description is required', $errors) ? 'is-invalid' : ''; ?>"
-                                  id="description" name="description" rows="4" required
-                                  placeholder="Enter category description"><?php echo htmlspecialchars($formData['description']); ?></textarea>
-                        <div class="invalid-feedback">
-                            Please provide a description.
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Update Category
-                        </button>
-                        <a href="index.php" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Cancel
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    <i class="fas fa-info-circle"></i> Category Info
-                </h6>
-            </div>
-            <div class="card-body">
-                <p><strong>ID:</strong> <?php echo $category['id']; ?></p>
-                <p><strong>Created:</strong> <?php echo formatDate($category['created_at']); ?></p>
-                <p><strong>Last Updated:</strong> <?php echo formatDate($category['updated_at'] ?? $category['created_at']); ?></p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<?php include '../../components/footer.php'; ?>
+        <table cellpadding="8">
+            <tr>
+                <td>Nama Category</td>
+                <td><input type="text" name="Category_Name" 
+                    value="<?php echo htmlspecialchars($row['Category_Name']); ?>" required style="width:350px;"></td>
+            </tr>
+            <tr>
+                <td>Tipe Category</td>
+                <td>
+                    <select name="Category_Type" required>
+                        <option value="Income"  <?php echo ($row['Category_Type']=='Income') ? 'selected' : ''; ?>>Income</option>
+                        <option value="Expense" <?php echo ($row['Category_Type']=='Expense') ? 'selected' : ''; ?>>Expense</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Icon Code</td>
+                <td><input type="text" name="Icon_Code" 
+                    value="<?php echo htmlspecialchars($row['Icon_Code']); ?>" required></td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button type="submit" name="update">Update Category</button>
+                    <a href="index.php">Batal</a>
+                </td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>

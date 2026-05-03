@@ -1,5 +1,5 @@
 <?php
-include 'db_debt.php';
+include 'db_transaction.php';
 
 if (isset($_GET['id'])) {
     $id = intval($_GET['id']);
@@ -7,7 +7,7 @@ if (isset($_GET['id'])) {
     $sql = "DELETE FROM $table WHERE $primary_key = $id";
 
     if (mysqli_query($conn, $sql)) {
-        echo "<script>alert('Debt/Loan berhasil dihapus!'); window.location='index.php';</script>";
+        echo "<script>alert('Transaction berhasil dihapus!'); window.location='index.php';</script>";
     } else {
         echo "Error: " . mysqli_error($conn);
     }
