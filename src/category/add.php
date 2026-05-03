@@ -1,4 +1,4 @@
-<?php include 'db_category.php'; ?>
+<?php include 'category.php'; ?>
 
 <!DOCTYPE html>
 <html lang="id">

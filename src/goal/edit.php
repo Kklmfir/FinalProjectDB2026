@@ -1,5 +1,5 @@
 <?php 
-include 'db_goal.php';
+include 'goal.php';
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Goal_ID']) ? intval($_POST['Goal_ID']) : 0);
 

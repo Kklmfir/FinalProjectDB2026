@@ -1,4 +1,4 @@
-<?php include 'db_goal.php'; ?>
+<?php include 'goal.php'; ?>
 
 <!DOCTYPE html>
 <html lang="id">

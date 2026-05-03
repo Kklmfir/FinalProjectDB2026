@@ -1,4 +1,4 @@
-<?php include 'db_contact.php'; ?>
+<?php include 'contact.php'; ?>
 
 <!DOCTYPE html>
 <html lang="id">

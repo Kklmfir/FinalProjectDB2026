@@ -1,5 +1,5 @@
 <?php 
-include 'db.php';
+include 'pocket.php';
 
 // Ambil ID dari GET (saat pertama kali buka form) atau dari POST (saat submit update)
 $id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Pocket_ID']) ? intval($_POST['Pocket_ID']) : 0);

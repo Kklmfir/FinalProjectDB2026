@@ -1,5 +1,5 @@
 <?php 
-include 'db_debt.php'; 
+include 'debt_loan.php'; 
 ?>
 
 <!DOCTYPE html>

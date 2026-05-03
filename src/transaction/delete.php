@@ -1,5 +1,5 @@
 <?php
-include 'db_transaction.php';
+include 'transaction.php';
 
 if (isset($_GET['id'])) {
     $id = intval($_GET['id']);

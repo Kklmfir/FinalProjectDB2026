@@ -1,4 +1,4 @@
-<?php include 'db_debt.php'; ?>
+<?php include 'debt_loan.php'; ?>
 
 <!DOCTYPE html>
 <html lang="id">

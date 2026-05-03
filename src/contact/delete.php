@@ -1,5 +1,5 @@
 <?php
-include 'db_contact.php';
+include 'contact.php';
 
 if (isset($_GET['id'])) {
     $id = intval($_GET['id']);

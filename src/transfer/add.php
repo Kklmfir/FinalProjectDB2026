@@ -1,4 +1,4 @@
-<?php include 'db_transfer.php'; ?>
+<?php include 'transfer.php'; ?>
 
 <!DOCTYPE html>
 <html lang="id">

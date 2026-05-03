@@ -1,5 +1,5 @@
 <?php 
-include 'db_debt.php';
+include 'debt_loan.php';
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Debt_ID']) ? intval($_POST['Debt_ID']) : 0);
 

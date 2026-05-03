@@ -1,4 +1,4 @@
-<?php include 'db_budget.php'; ?>
+<?php include 'budget.php'; ?>
 
 <!DOCTYPE html>
 <html lang="id">

@@ -1,5 +1,5 @@
 <?php 
-include 'db_budget.php';
+include 'budget.php';
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Budget_ID']) ? intval($_POST['Budget_ID']) : 0);
 

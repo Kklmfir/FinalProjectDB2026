@@ -1,5 +1,5 @@
 <?php 
-include 'db_subcategory.php'; 
+include 'sub_category.php'; 
 ?>
 
 <!DOCTYPE html>

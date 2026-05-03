@@ -1,5 +1,5 @@
 <?php 
-include 'db_category.php';
+include 'category.php';
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Category_ID']) ? intval($_POST['Category_ID']) : 0);
 

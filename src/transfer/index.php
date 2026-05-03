@@ -1,5 +1,5 @@
 <?php 
-include 'db_transfer.php'; 
+include 'transfer.php'; 
 ?>
 
 <!DOCTYPE html>

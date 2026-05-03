@@ -1,4 +1,4 @@
-<?php include 'db_transaction.php'; ?>
+<?php include 'transaction.php'; ?>
 
 <!DOCTYPE html>
 <html lang="id">

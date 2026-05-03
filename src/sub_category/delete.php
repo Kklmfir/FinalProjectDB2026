@@ -1,5 +1,5 @@
 <?php
-include 'db_subcategory.php';
+include 'sub_category.php';
 
 if (isset($_GET['id'])) {
     $id = intval($_GET['id']);

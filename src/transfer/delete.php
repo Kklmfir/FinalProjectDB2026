@@ -1,5 +1,5 @@
 <?php
-include 'db_transfer.php';
+include 'transfer.php';
 
 if (isset($_GET['id'])) {
     $id = intval($_GET['id']);

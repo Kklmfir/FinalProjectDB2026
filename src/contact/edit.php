@@ -1,5 +1,5 @@
 <?php 
-include 'db_contact.php';
+include 'contact.php';
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Contact_ID']) ? intval($_POST['Contact_ID']) : 0);
 

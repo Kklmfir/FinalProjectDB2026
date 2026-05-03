@@ -1,5 +1,5 @@
 <?php 
-include 'db_contact.php'; 
+include 'contact.php'; 
 ?>
 
 <!DOCTYPE html>

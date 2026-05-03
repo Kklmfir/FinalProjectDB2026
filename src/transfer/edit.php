@@ -1,5 +1,5 @@
 <?php 
-include 'db_transfer.php';
+include 'transfer.php';
 
 $id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Transfer_ID']) ? intval($_POST['Transfer_ID']) : 0);
 

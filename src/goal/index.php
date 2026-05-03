@@ -1,5 +1,5 @@
 <?php 
-include 'db_goal.php'; 
+include 'goal.php'; 
 ?>
 
 <!DOCTYPE html>
