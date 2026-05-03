@@ -1,51 +1,82 @@
-<?php 
-include 'db.php'; 
+<?php
+/**
+ * src/pocket/index.php — Daftar Pocket
+ */
+require_once __DIR__ . '/pocket.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+
+$pageTitle  = 'Pocket';
+$activePage = 'pocket';
+$rootPath   = '../../';
+
+include $rootPath . 'components/header.php';
 ?>
+<div class="mdg-layout">
+<?php include $rootPath . 'components/sidebar.php'; ?>
+<div class="mdg-main">
+<?php include $rootPath . 'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MDG - Data Pocket</title>
-</head>
-<body>
-    <h2>Data Pocket (Kantong Keuangan)</h2>
-    
-    <p><a href="add.php">+ Tambah Pocket Baru</a></p>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><i class="fas fa-wallet me-2 text-primary-mdg"></i>Pocket (Kantong)</h1>
+            <p class="page-subtitle">Kelola semua kantong keuangan Anda</p>
+        </div>
+        <a href="add.php" class="btn-mdg-primary">
+            <i class="fas fa-plus"></i> Tambah Pocket
+        </a>
+    </div>
 
-    <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <tr>
-            <th>Pocket ID</th>
-            <th>Nama Kantong</th>
-            <th>Saldo</th>
-            <th>Maksimal Budget</th>
-            <th>Tanggal Dibuat</th>
-            <th>Aksi</th>
-        </tr>
+    <?php include $rootPath . 'components/alerts.php'; ?>
 
-        <?php
-        $sql = "SELECT * FROM $table ORDER BY $primary_key ASC";
-        $result = mysqli_query($conn, $sql);
+    <div class="mdg-table-wrapper">
+        <div class="mdg-table-header">
+            <h5><i class="fas fa-list me-2"></i>Data Pocket</h5>
+        </div>
+        <div class="table-responsive p-3">
+            <table class="table mdg-table mdg-datatable" id="pocketTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nama Kantong</th>
+                        <th>Saldo</th>
+                        <th>Maks. Budget</th>
+                        <th>Tgl Dibuat</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php
+                $sql    = "SELECT * FROM $table ORDER BY $primary_key ASC";
+                $result = mysqli_query($conn, $sql);
+                while ($row = mysqli_fetch_assoc($result)):
+                ?>
+                    <tr>
+                        <td><?= e($row['Pocket_ID']) ?></td>
+                        <td><strong><?= e($row['Pocket_Name']) ?></strong></td>
+                        <td><?= formatRupiah((float)$row['Balance']) ?></td>
+                        <td><?= formatRupiah((float)$row['Max_Budget']) ?></td>
+                        <td><?= formatDateShort($row['Created_Date'] ?? '') ?></td>
+                        <td>
+                            <a href="edit.php?id=<?= (int)$row['Pocket_ID'] ?>"
+                               class="btn-mdg-secondary" style="padding:.3rem .7rem;font-size:.78rem">
+                                <i class="fas fa-pen"></i> Edit
+                            </a>
+                            <a href="delete.php?id=<?= (int)$row['Pocket_ID'] ?>"
+                               class="btn-mdg-danger" style="padding:.3rem .7rem;font-size:.78rem"
+                               onclick="return confirmDelete('Pocket #<?= (int)$row['Pocket_ID'] ?>')">
+                                <i class="fas fa-trash"></i> Hapus
+                            </a>
+                        </td>
+                    </tr>
+                <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>";
-            echo "<td>" . $row['Pocket_ID'] . "</td>";
-            echo "<td>" . htmlspecialchars($row['Pocket_Name']) . "</td>";
-            echo "<td>Rp " . number_format($row['Balance'], 0, ',', '.') . "</td>";
-            echo "<td>Rp " . number_format($row['Max_Budget'], 0, ',', '.') . "</td>";
-            echo "<td>" . $row['Created_Date'] . "</td>";
-            echo "<td>
-                    <a href='edit.php?id=" . $row['Pocket_ID'] . "'>Edit</a> | 
-                    <a href='delete.php?id=" . $row['Pocket_ID'] . "' 
-                       onclick=\"return confirm('Yakin ingin menghapus pocket ini?')\">Hapus</a>
-                  </td>";
-            echo "</tr>";
-        }
-        ?>
-    </table>
-
-    <br>
-    <a href="index.php">Refresh</a>
-</body>
-</html>
+</main>
+<?php include $rootPath . 'components/footer.php'; ?>
+</div>
+</div>

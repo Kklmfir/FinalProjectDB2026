@@ -1,52 +1,27 @@
-<?php include 'db_contact.php'; ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Tambah Contact Baru</title>
-</head>
-<body>
-    <h2>Tambah Contact Baru</h2>
-    
-    <form action="add.php" method="POST">
-        <table cellpadding="8">
-            <tr>
-                <td>Nama Kontak</td>
-                <td><input type="text" name="Contact_Name" required style="width:350px;"></td>
-            </tr>
-            <tr>
-                <td>Nomor Telepon</td>
-                <td><input type="text" name="Phone_Number" required placeholder="contoh: 081234567890"></td>
-            </tr>
-            <tr>
-                <td>Jenis Hubungan</td>
-                <td><input type="text" name="Relation_Type" required placeholder="contoh: Teman, Rekan Kerja, Keluarga"></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="submit">Simpan Contact</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+<?php
+require_once __DIR__ . '/contact.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Tambah Kontak'; $activePage='contact'; $rootPath='../../'; $alertError='';
+if (isset($_POST['submit'])) {
+    $Contact_Name  = mysqli_real_escape_string($conn, sanitizeInput($_POST['Contact_Name']??''));
+    $Phone_Number  = mysqli_real_escape_string($conn, sanitizeInput($_POST['Phone_Number']??''));
+    $Relation_Type = mysqli_real_escape_string($conn, sanitizeInput($_POST['Relation_Type']??''));
+    $sql = "INSERT INTO $table (Contact_Name, Phone_Number, Relation_Type) VALUES ('$Contact_Name','$Phone_Number','$Relation_Type')";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Kontak berhasil ditambahkan!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
+}
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-plus-circle me-2 text-primary-mdg"></i>Tambah Kontak</h1><nav class="mdg-breadcrumb"><a href="index.php">Kontak</a> / Tambah</nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Form Kontak Baru</span></div><div class="mdg-card-body">
+    <form action="add.php" method="POST"><?= csrfField() ?>
+      <div class="mdg-form-group"><label class="form-label">Nama Kontak <span class="text-danger">*</span></label><input type="text" class="form-control" name="Contact_Name" value="<?= e($_POST['Contact_Name']??'') ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">No. Telepon <span class="text-danger">*</span></label><input type="text" class="form-control" name="Phone_Number" value="<?= e($_POST['Phone_Number']??'') ?>" placeholder="081234567890" required></div>
+      <div class="mdg-form-group"><label class="form-label">Jenis Hubungan <span class="text-danger">*</span></label><input type="text" class="form-control" name="Relation_Type" value="<?= e($_POST['Relation_Type']??'') ?>" placeholder="contoh: Teman, Keluarga, Rekan Kerja" required></div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="submit" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-
-    <?php
-    if (isset($_POST['submit'])) {
-        $Contact_Name   = mysqli_real_escape_string($conn, $_POST['Contact_Name']);
-        $Phone_Number   = mysqli_real_escape_string($conn, $_POST['Phone_Number']);
-        $Relation_Type  = mysqli_real_escape_string($conn, $_POST['Relation_Type']);
-
-        $sql = "INSERT INTO $table (Contact_Name, Phone_Number, Relation_Type) 
-                VALUES ('$Contact_Name', '$Phone_Number', '$Relation_Type')";
-
-        if (mysqli_query($conn, $sql)) {
-            echo "<script>alert('Contact berhasil ditambahkan!'); window.location='index.php';</script>";
-        } else {
-            echo "Error: " . mysqli_error($conn);
-        }
-    }
-    ?>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

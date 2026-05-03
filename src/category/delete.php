@@ -1,17 +1,14 @@
 <?php
-include 'db_category.php';
-
+require_once __DIR__ . '/category.php';
+if (session_status() === PHP_SESSION_NONE) session_start();
 if (isset($_GET['id'])) {
-    $id = intval($_GET['id']);
-
+    $id  = (int)$_GET['id'];
     $sql = "DELETE FROM $table WHERE $primary_key = $id";
-
     if (mysqli_query($conn, $sql)) {
-        echo "<script>alert('Category berhasil dihapus!'); window.location='index.php';</script>";
+        $_SESSION['flash_success'] = 'Kategori berhasil dihapus.';
     } else {
-        echo "Error: " . mysqli_error($conn);
+        $_SESSION['flash_error'] = 'Gagal menghapus: ' . mysqli_error($conn);
     }
-} else {
-    header("Location: index.php");
 }
-?>
+header('Location: index.php');
+exit;

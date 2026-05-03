@@ -1,87 +1,34 @@
-<?php 
-include 'db_transfer.php';
-
-$id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Transfer_ID']) ? intval($_POST['Transfer_ID']) : 0);
-
-if ($id <= 0) {
-    die("ID tidak valid!");
-}
-
-// Proses Update
+<?php
+require_once __DIR__ . '/transfer.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Edit Transfer'; $activePage='transfer'; $rootPath='../../'; $alertError='';
+$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['Transfer_ID']) ? (int)$_POST['Transfer_ID'] : 0);
+if ($id <= 0) { header('Location: index.php'); exit; }
 if (isset($_POST['update'])) {
-    $Source_Pocket_ID = intval($_POST['Source_Pocket_ID']);
-    $Target_Pocket_ID = intval($_POST['Target_Pocket_ID']);
-    $Transfer_Amount  = floatval($_POST['Transfer_Amount']);
-    $Transfer_Date    = $_POST['Transfer_Date'];
-
-    $sql = "UPDATE $table SET 
-                Source_Pocket_ID = $Source_Pocket_ID,
-                Target_Pocket_ID = $Target_Pocket_ID,
-                Transfer_Amount = $Transfer_Amount,
-                Transfer_Date = '$Transfer_Date'
-            WHERE $primary_key = $id";
-
-    if (mysqli_query($conn, $sql)) {
-        echo "<script>
-                alert('Transfer berhasil diupdate!');
-                window.location='index.php';
-              </script>";
-        exit();
-    } else {
-        echo "Error: " . mysqli_error($conn);
-    }
+    $Source_Pocket_ID = sanitizeInt($_POST['Source_Pocket_ID']??0);
+    $Target_Pocket_ID = sanitizeInt($_POST['Target_Pocket_ID']??0);
+    $Transfer_Amount  = sanitizeFloat($_POST['Transfer_Amount']??0);
+    $Transfer_Date    = sanitizeInput($_POST['Transfer_Date']??'');
+    $sql = "UPDATE $table SET Source_Pocket_ID=$Source_Pocket_ID, Target_Pocket_ID=$Target_Pocket_ID, Transfer_Amount=$Transfer_Amount, Transfer_Date='$Transfer_Date' WHERE $primary_key=$id";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Transfer berhasil diperbarui!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
 }
-
-// Ambil data untuk edit
-$sql = "SELECT * FROM $table WHERE $primary_key = $id";
-$result = mysqli_query($conn, $sql);
-$row = mysqli_fetch_assoc($result);
-
-if (!$row) {
-    die("Data tidak ditemukan! ID: " . $id);
-}
-?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Transfer</title>
-</head>
-<body>
-    <h2>Edit Transfer - ID: <?php echo $row['Transfer_ID']; ?></h2>
-    
-    <form action="edit.php" method="POST">
-        <input type="hidden" name="Transfer_ID" value="<?php echo $row['Transfer_ID']; ?>">
-
-        <table cellpadding="8">
-            <tr>
-                <td>Source Pocket ID</td>
-                <td><input type="number" name="Source_Pocket_ID" 
-                    value="<?php echo $row['Source_Pocket_ID']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Target Pocket ID</td>
-                <td><input type="number" name="Target_Pocket_ID" 
-                    value="<?php echo $row['Target_Pocket_ID']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Jumlah Transfer (Rp)</td>
-                <td><input type="number" name="Transfer_Amount" step="0.01" 
-                    value="<?php echo $row['Transfer_Amount']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Tanggal Transfer</td>
-                <td><input type="datetime-local" name="Transfer_Date" 
-                    value="<?php echo date('Y-m-d\TH:i', strtotime($row['Transfer_Date'])); ?>" required></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="update">Update Transfer</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+$row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM $table WHERE $primary_key=$id"));
+if (!$row) { header('Location: index.php'); exit; }
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-pen me-2 text-primary-mdg"></i>Edit Transfer</h1><nav class="mdg-breadcrumb"><a href="index.php">Transfer</a> / Edit #<?= $id ?></nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Edit Data Transfer</span></div><div class="mdg-card-body">
+    <form action="edit.php" method="POST"><?= csrfField() ?>
+      <input type="hidden" name="Transfer_ID" value="<?= $id ?>">
+      <div class="mdg-form-group"><label class="form-label">Source Pocket ID (Dari) <span class="text-danger">*</span></label><input type="number" class="form-control" name="Source_Pocket_ID" value="<?= e($row['Source_Pocket_ID']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Target Pocket ID (Ke) <span class="text-danger">*</span></label><input type="number" class="form-control" name="Target_Pocket_ID" value="<?= e($row['Target_Pocket_ID']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Jumlah Transfer (Rp) <span class="text-danger">*</span></label><input type="number" class="form-control" name="Transfer_Amount" value="<?= e($row['Transfer_Amount']) ?>" step="0.01" min="0" required></div>
+      <div class="mdg-form-group"><label class="form-label">Tanggal Transfer <span class="text-danger">*</span></label><input type="datetime-local" class="form-control" name="Transfer_Date" value="<?= e(date('Y-m-d\TH:i', strtotime($row['Transfer_Date']??'now'))) ?>" required></div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="update" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan Perubahan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

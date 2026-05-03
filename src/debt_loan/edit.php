@@ -1,99 +1,42 @@
-<?php 
-include 'db_debt.php';
-
-$id = isset($_GET['id']) ? intval($_GET['id']) : (isset($_POST['Debt_ID']) ? intval($_POST['Debt_ID']) : 0);
-
-if ($id <= 0) {
-    die("ID tidak valid!");
-}
-
-// Proses Update
+<?php
+require_once __DIR__ . '/debt_loan.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Edit Hutang/Piutang'; $activePage='debt_loan'; $rootPath='../../'; $alertError='';
+$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['Debt_ID']) ? (int)$_POST['Debt_ID'] : 0);
+if ($id <= 0) { header('Location: index.php'); exit; }
 if (isset($_POST['update'])) {
-    $Contact_ID = intval($_POST['Contact_ID']);
-    $Pocket_ID  = intval($_POST['Pocket_ID']);
-    $Amount     = floatval($_POST['Amount']);
-    $Due_Date   = $_POST['Due_Date'];
-    $Status     = mysqli_real_escape_string($conn, $_POST['Status']);
-
-    $sql = "UPDATE $table SET 
-                Contact_ID = $Contact_ID,
-                Pocket_ID = $Pocket_ID,
-                Amount = $Amount,
-                Due_Date = '$Due_Date',
-                Status = '$Status'
-            WHERE $primary_key = $id";
-
-    if (mysqli_query($conn, $sql)) {
-        echo "<script>
-                alert('Debt/Loan berhasil diupdate!');
-                window.location='index.php';
-              </script>";
-        exit();
-    } else {
-        echo "Error: " . mysqli_error($conn);
-    }
+    $Contact_ID = sanitizeInt($_POST['Contact_ID']??0);
+    $Pocket_ID  = sanitizeInt($_POST['Pocket_ID']??0);
+    $Amount     = sanitizeFloat($_POST['Amount']??0);
+    $Due_Date   = sanitizeInput($_POST['Due_Date']??'');
+    $Status     = mysqli_real_escape_string($conn, sanitizeInput($_POST['Status']??'unpaid'));
+    $sql = "UPDATE $table SET Contact_ID=$Contact_ID, Pocket_ID=$Pocket_ID, Amount=$Amount, Due_Date='$Due_Date', Status='$Status' WHERE $primary_key=$id";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Hutang/Piutang berhasil diperbarui!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
 }
-
-// Ambil data untuk edit
-$sql = "SELECT * FROM $table WHERE $primary_key = $id";
-$result = mysqli_query($conn, $sql);
-$row = mysqli_fetch_assoc($result);
-
-if (!$row) {
-    die("Data tidak ditemukan! ID: " . $id);
-}
-?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Edit Debt/Loan</title>
-</head>
-<body>
-    <h2>Edit Debt/Loan - ID: <?php echo $row['Debt_ID']; ?></h2>
-    
-    <form action="edit.php" method="POST">
-        <input type="hidden" name="Debt_ID" value="<?php echo $row['Debt_ID']; ?>">
-
-        <table cellpadding="8">
-            <tr>
-                <td>Contact ID</td>
-                <td><input type="number" name="Contact_ID" 
-                    value="<?php echo $row['Contact_ID']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Pocket ID</td>
-                <td><input type="number" name="Pocket_ID" 
-                    value="<?php echo $row['Pocket_ID']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Jumlah (Rp)</td>
-                <td><input type="number" name="Amount" step="0.01" 
-                    value="<?php echo $row['Amount']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Tanggal Jatuh Tempo</td>
-                <td><input type="date" name="Due_Date" 
-                    value="<?php echo $row['Due_Date']; ?>" required></td>
-            </tr>
-            <tr>
-                <td>Status</td>
-                <td>
-                    <select name="Status" required>
-                        <option value="Belum Lunas" <?php echo ($row['Status']=='Belum Lunas') ? 'selected' : ''; ?>>Belum Lunas</option>
-                        <option value="Lunas" <?php echo ($row['Status']=='Lunas') ? 'selected' : ''; ?>>Lunas</option>
-                        <option value="Cicilan Aktif" <?php echo ($row['Status']=='Cicilan Aktif') ? 'selected' : ''; ?>>Cicilan Aktif</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="update">Update Debt/Loan</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+$row = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM $table WHERE $primary_key=$id"));
+if (!$row) { header('Location: index.php'); exit; }
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-pen me-2 text-primary-mdg"></i>Edit Hutang/Piutang</h1><nav class="mdg-breadcrumb"><a href="index.php">Hutang/Piutang</a> / Edit #<?= $id ?></nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Edit Data Hutang/Piutang</span></div><div class="mdg-card-body">
+    <form action="edit.php" method="POST"><?= csrfField() ?>
+      <input type="hidden" name="Debt_ID" value="<?= $id ?>">
+      <div class="mdg-form-group"><label class="form-label">Contact ID <span class="text-danger">*</span></label><input type="number" class="form-control" name="Contact_ID" value="<?= e($row['Contact_ID']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Pocket ID <span class="text-danger">*</span></label><input type="number" class="form-control" name="Pocket_ID" value="<?= e($row['Pocket_ID']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Jumlah (Rp) <span class="text-danger">*</span></label><input type="number" class="form-control" name="Amount" value="<?= e($row['Amount']) ?>" step="0.01" min="0" required></div>
+      <div class="mdg-form-group"><label class="form-label">Tanggal Jatuh Tempo <span class="text-danger">*</span></label><input type="date" class="form-control" name="Due_Date" value="<?= e($row['Due_Date']) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Status <span class="text-danger">*</span></label>
+        <select class="form-select" name="Status" required>
+          <option value="unpaid" <?= ($row['Status']==='unpaid')?'selected':'' ?>>Belum Lunas</option>
+          <option value="paid"   <?= ($row['Status']==='paid')?'selected':'' ?>>Lunas</option>
+          <option value="partial"<?= ($row['Status']==='partial')?'selected':'' ?>>Cicilan Aktif</option>
+        </select>
+      </div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="update" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan Perubahan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

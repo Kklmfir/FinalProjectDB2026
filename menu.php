@@ -1,5 +1,10 @@
 <?php
-// menu.php - Halaman Menu Utama MDG App
+/**
+ * menu.php — Redirect ke main.php (dashboard baru)
+ * File ini dipertahankan untuk kompatibilitas backward.
+ */
+header('Location: main.php');
+exit;
 ?>
 
 <!DOCTYPE html>

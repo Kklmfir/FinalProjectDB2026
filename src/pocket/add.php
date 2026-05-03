@@ -1,61 +1,92 @@
-<?php include 'db.php'; ?>
+<?php
+/**
+ * src/pocket/add.php — Tambah Pocket Baru
+ */
+require_once __DIR__ . '/pocket.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
 
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Tambah Pocket Baru</title>
-</head>
-<body>
-    <h2>Tambah Pocket Baru</h2>
-    
-    <form action="add.php" method="POST">
-        <table cellpadding="8">
-            <tr>
-                <td>Nama Kantong</td>
-                <td><input type="text" name="Pocket_Name" required style="width:350px;"></td>
-            </tr>
-            <tr>
-                <td>Saldo Awal</td>
-                <td><input type="number" name="Balance" step="0.01" value="0" required></td>
-            </tr>
-            <tr>
-                <td>Maksimal Budget</td>
-                <td><input type="number" name="Max_Budget" step="0.01" value="0"></td>
-            </tr>
-            <tr>
-                <td>Tanggal Dibuat</td>
-                <td><input type="datetime-local" name="Created_Date" required></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="submit">Simpan Pocket Baru</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
-    </form>
+$pageTitle  = 'Tambah Pocket';
+$activePage = 'pocket';
+$rootPath   = '../../';
+$alertError = '';
 
-    <?php
-    if (isset($_POST['submit'])) {
-        $Pocket_Name  = mysqli_real_escape_string($conn, $_POST['Pocket_Name']);
-        $Balance      = floatval($_POST['Balance']);
-        $Max_Budget   = floatval($_POST['Max_Budget']);
-        $Created_Date = $_POST['Created_Date'];
+if (isset($_POST['submit'])) {
+    $Pocket_Name  = mysqli_real_escape_string($conn, sanitizeInput($_POST['Pocket_Name'] ?? ''));
+    $Balance      = sanitizeFloat($_POST['Balance'] ?? 0);
+    $Max_Budget   = sanitizeFloat($_POST['Max_Budget'] ?? 0);
+    $Created_Date = sanitizeInput($_POST['Created_Date'] ?? '');
 
-        // Pocket_ID dihapus karena sudah AUTO_INCREMENT
-        $sql = "INSERT INTO $table (Pocket_Name, Balance, Max_Budget, Created_Date) 
-                VALUES ('$Pocket_Name', $Balance, $Max_Budget, '$Created_Date')";
+    $sql = "INSERT INTO $table (Pocket_Name, Balance, Max_Budget, Created_Date)
+            VALUES ('$Pocket_Name', $Balance, $Max_Budget, '$Created_Date')";
 
-        if (mysqli_query($conn, $sql)) {
-            echo "<script>
-                    alert('Pocket baru berhasil ditambahkan!');
-                    window.location='index.php';
-                  </script>";
-        } else {
-            echo "Error: " . mysqli_error($conn);
-        }
+    if (mysqli_query($conn, $sql)) {
+        $_SESSION['flash_success'] = 'Pocket baru berhasil ditambahkan!';
+        header('Location: index.php');
+        exit;
+    } else {
+        $alertError = 'Gagal menyimpan: ' . mysqli_error($conn);
     }
-    ?>
-</body>
-</html>
+}
+
+include $rootPath . 'components/header.php';
+?>
+<div class="mdg-layout">
+<?php include $rootPath . 'components/sidebar.php'; ?>
+<div class="mdg-main">
+<?php include $rootPath . 'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><i class="fas fa-plus-circle me-2 text-primary-mdg"></i>Tambah Pocket</h1>
+            <nav class="mdg-breadcrumb"><a href="index.php">Pocket</a> / Tambah</nav>
+        </div>
+        <a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
+    </div>
+
+    <?php include $rootPath . 'components/alerts.php'; ?>
+
+    <div class="mdg-card" style="max-width:560px">
+        <div class="mdg-card-header">
+            <span class="mdg-card-title">Form Pocket Baru</span>
+        </div>
+        <div class="mdg-card-body">
+            <form action="add.php" method="POST">
+                <?= csrfField() ?>
+                <div class="mdg-form-group">
+                    <label class="form-label">Nama Kantong <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="Pocket_Name"
+                           value="<?= e($_POST['Pocket_Name'] ?? '') ?>"
+                           placeholder="contoh: Tabungan Utama" required>
+                </div>
+                <div class="mdg-form-group">
+                    <label class="form-label">Saldo Awal (Rp) <span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" name="Balance"
+                           value="<?= e($_POST['Balance'] ?? '0') ?>" step="0.01" min="0" required>
+                </div>
+                <div class="mdg-form-group">
+                    <label class="form-label">Maksimal Budget (Rp)</label>
+                    <input type="number" class="form-control" name="Max_Budget"
+                           value="<?= e($_POST['Max_Budget'] ?? '0') ?>" step="0.01" min="0">
+                    <div class="form-text-hint">Batas maksimum saldo pada kantong ini (opsional).</div>
+                </div>
+                <div class="mdg-form-group">
+                    <label class="form-label">Tanggal Dibuat <span class="text-danger">*</span></label>
+                    <input type="datetime-local" class="form-control" name="Created_Date"
+                           value="<?= e($_POST['Created_Date'] ?? date('Y-m-d\TH:i')) ?>" required>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" name="submit" class="btn-mdg-primary">
+                        <i class="fas fa-save"></i> Simpan Pocket
+                    </button>
+                    <a href="index.php" class="btn-mdg-secondary">Batal</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</main>
+<?php include $rootPath . 'components/footer.php'; ?>
+</div>
+</div>

@@ -1,72 +1,38 @@
-<?php include 'db_transaction.php'; ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Tambah Transaction Baru</title>
-</head>
-<body>
-    <h2>Tambah Transaction Baru</h2>
-    
-    <form action="add.php" method="POST">
-        <table cellpadding="8">
-            <tr>
-                <td>Pocket ID</td>
-                <td><input type="number" name="Pocket_ID" required></td>
-            </tr>
-            <tr>
-                <td>Category ID</td>
-                <td><input type="number" name="Category_ID" required></td>
-            </tr>
-            <tr>
-                <td>Jumlah (Rp)</td>
-                <td><input type="number" name="Amount" step="0.01" required></td>
-            </tr>
-            <tr>
-                <td>Tanggal & Waktu</td>
-                <td><input type="datetime-local" name="System_Log" required></td>
-            </tr>
-            <tr>
-                <td>Deskripsi</td>
-                <td><textarea name="Description" rows="3" cols="50" required></textarea></td>
-            </tr>
-            <tr>
-                <td>Warning Status</td>
-                <td>
-                    <select name="Warning_Status">
-                        <option value="0">Tidak</option>
-                        <option value="1">Ya (Warning)</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="submit">Simpan Transaction</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+<?php
+require_once __DIR__ . '/transaction.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Tambah Transaksi'; $activePage='transaction'; $rootPath='../../'; $alertError='';
+if (isset($_POST['submit'])) {
+    $Pocket_ID      = sanitizeInt($_POST['Pocket_ID']??0);
+    $Category_ID    = sanitizeInt($_POST['Category_ID']??0);
+    $Amount         = sanitizeFloat($_POST['Amount']??0);
+    $System_Log     = sanitizeInput($_POST['System_Log']??'');
+    $Description    = mysqli_real_escape_string($conn, sanitizeInput($_POST['Description']??''));
+    $Warning_Status = sanitizeInt($_POST['Warning_Status']??0);
+    $sql = "INSERT INTO $table (Pocket_ID, Category_ID, Amount, System_Log, Description, Warning_Status) VALUES ($Pocket_ID,$Category_ID,$Amount,'$System_Log','$Description',$Warning_Status)";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Transaksi berhasil ditambahkan!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
+}
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-plus-circle me-2 text-primary-mdg"></i>Tambah Transaksi</h1><nav class="mdg-breadcrumb"><a href="index.php">Transaksi</a> / Tambah</nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Form Transaksi Baru</span></div><div class="mdg-card-body">
+    <form action="add.php" method="POST"><?= csrfField() ?>
+      <div class="mdg-form-group"><label class="form-label">Pocket ID <span class="text-danger">*</span></label><input type="number" class="form-control" name="Pocket_ID" value="<?= e($_POST['Pocket_ID']??'') ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Category ID <span class="text-danger">*</span></label><input type="number" class="form-control" name="Category_ID" value="<?= e($_POST['Category_ID']??'') ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Jumlah (Rp) <span class="text-danger">*</span></label><input type="number" class="form-control" name="Amount" value="<?= e($_POST['Amount']??'') ?>" step="0.01" min="0" required></div>
+      <div class="mdg-form-group"><label class="form-label">Tanggal &amp; Waktu <span class="text-danger">*</span></label><input type="datetime-local" class="form-control" name="System_Log" value="<?= e($_POST['System_Log']??date('Y-m-d\TH:i')) ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Deskripsi</label><textarea class="form-control" name="Description" rows="3"><?= e($_POST['Description']??'') ?></textarea></div>
+      <div class="mdg-form-group"><label class="form-label">Warning Status</label>
+        <select class="form-select" name="Warning_Status">
+          <option value="0">Normal</option>
+          <option value="1">Warning (Hampir Melewati Budget)</option>
+        </select>
+      </div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="submit" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-
-    <?php
-    if (isset($_POST['submit'])) {
-        $Pocket_ID      = intval($_POST['Pocket_ID']);
-        $Category_ID    = intval($_POST['Category_ID']);
-        $Amount         = floatval($_POST['Amount']);
-        $System_Log     = $_POST['System_Log'];
-        $Description    = mysqli_real_escape_string($conn, $_POST['Description']);
-        $Warning_Status = intval($_POST['Warning_Status']);
-
-        $sql = "INSERT INTO $table (Pocket_ID, Category_ID, Amount, System_Log, Description, Warning_Status) 
-                VALUES ($Pocket_ID, $Category_ID, $Amount, '$System_Log', '$Description', $Warning_Status)";
-
-        if (mysqli_query($conn, $sql)) {
-            echo "<script>alert('Transaction berhasil ditambahkan!'); window.location='index.php';</script>";
-        } else {
-            echo "Error: " . mysqli_error($conn);
-        }
-    }
-    ?>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

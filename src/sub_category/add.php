@@ -1,52 +1,27 @@
-<?php include 'db_subcategory.php'; ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>Tambah Sub Category Baru</title>
-</head>
-<body>
-    <h2>Tambah Sub Category Baru</h2>
-    
-    <form action="add.php" method="POST">
-        <table cellpadding="8">
-            <tr>
-                <td>Category ID</td>
-                <td><input type="number" name="Category_ID" required></td>
-            </tr>
-            <tr>
-                <td>Nama Sub Category</td>
-                <td><input type="text" name="Sub_Name" required style="width:350px;"></td>
-            </tr>
-            <tr>
-                <td>Notes / Keterangan</td>
-                <td><textarea name="Notes" rows="4" cols="50"></textarea></td>
-            </tr>
-            <tr>
-                <td colspan="2">
-                    <button type="submit" name="submit">Simpan Sub Category</button>
-                    <a href="index.php">Batal</a>
-                </td>
-            </tr>
-        </table>
+<?php
+require_once __DIR__ . '/sub_category.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle='Tambah Sub Kategori'; $activePage='sub_category'; $rootPath='../../'; $alertError='';
+if (isset($_POST['submit'])) {
+    $Category_ID = sanitizeInt($_POST['Category_ID']??0);
+    $Sub_Name    = mysqli_real_escape_string($conn, sanitizeInput($_POST['Sub_Name']??''));
+    $Notes       = mysqli_real_escape_string($conn, sanitizeInput($_POST['Notes']??''));
+    $sql = "INSERT INTO $table (Category_ID, Sub_Name, Notes) VALUES ($Category_ID,'$Sub_Name','$Notes')";
+    if (mysqli_query($conn, $sql)) { $_SESSION['flash_success']='Sub Kategori berhasil ditambahkan!'; header('Location: index.php'); exit; }
+    else { $alertError = 'Gagal: ' . mysqli_error($conn); }
+}
+include $rootPath . 'components/header.php'; ?>
+<div class="mdg-layout"><?php include $rootPath.'components/sidebar.php'; ?><div class="mdg-main"><?php include $rootPath.'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header"><div><h1 class="page-title"><i class="fas fa-plus-circle me-2 text-primary-mdg"></i>Tambah Sub Kategori</h1><nav class="mdg-breadcrumb"><a href="index.php">Sub Kategori</a> / Tambah</nav></div><a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a></div>
+  <?php include $rootPath.'components/alerts.php'; ?>
+  <div class="mdg-card" style="max-width:560px"><div class="mdg-card-header"><span class="mdg-card-title">Form Sub Kategori Baru</span></div><div class="mdg-card-body">
+    <form action="add.php" method="POST"><?= csrfField() ?>
+      <div class="mdg-form-group"><label class="form-label">Category ID <span class="text-danger">*</span></label><input type="number" class="form-control" name="Category_ID" value="<?= e($_POST['Category_ID']??'') ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Nama Sub Kategori <span class="text-danger">*</span></label><input type="text" class="form-control" name="Sub_Name" value="<?= e($_POST['Sub_Name']??'') ?>" required></div>
+      <div class="mdg-form-group"><label class="form-label">Catatan</label><textarea class="form-control" name="Notes" rows="3"><?= e($_POST['Notes']??'') ?></textarea></div>
+      <div class="d-flex gap-2 mt-3"><button type="submit" name="submit" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan</button><a href="index.php" class="btn-mdg-secondary">Batal</a></div>
     </form>
-
-    <?php
-    if (isset($_POST['submit'])) {
-        $Category_ID = intval($_POST['Category_ID']);
-        $Sub_Name    = mysqli_real_escape_string($conn, $_POST['Sub_Name']);
-        $Notes       = mysqli_real_escape_string($conn, $_POST['Notes']);
-
-        $sql = "INSERT INTO $table (Category_ID, Sub_Name, Notes) 
-                VALUES ($Category_ID, '$Sub_Name', '$Notes')";
-
-        if (mysqli_query($conn, $sql)) {
-            echo "<script>alert('Sub Category berhasil ditambahkan!'); window.location='index.php';</script>";
-        } else {
-            echo "Error: " . mysqli_error($conn);
-        }
-    }
-    ?>
-</body>
-</html>
+  </div></div>
+</main><?php include $rootPath.'components/footer.php'; ?></div></div>

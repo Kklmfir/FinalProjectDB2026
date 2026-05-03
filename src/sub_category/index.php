@@ -1,48 +1,58 @@
-<?php 
-include 'db_subcategory.php'; 
+<?php
+require_once __DIR__ . '/sub_category.php';
+require_once __DIR__ . '/../../helpers/functions.php';
+require_once __DIR__ . '/../../helpers/security.php';
+$pageTitle  = 'Sub Kategori';
+$activePage = 'sub_category';
+$rootPath   = '../../';
+include $rootPath . 'components/header.php';
 ?>
-
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <title>MDG - Data Sub Category</title>
-</head>
-<body>
-    <h2>Data Sub Category</h2>
-    
-    <p><a href="add.php">+ Tambah Sub Category Baru</a></p>
-
-    <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; width: 100%;">
-        <tr>
-            <th>Sub Category ID</th>
-            <th>Category ID</th>
-            <th>Nama Sub Category</th>
-            <th>Notes</th>
-            <th>Aksi</th>
-        </tr>
-
+<div class="mdg-layout">
+<?php include $rootPath . 'components/sidebar.php'; ?>
+<div class="mdg-main">
+<?php include $rootPath . 'components/navbar.php'; ?>
+<main class="mdg-content animate-fade-in">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-tag me-2 text-primary-mdg"></i>Sub Kategori</h1>
+      <p class="page-subtitle">Kelola sub kategori transaksi</p>
+    </div>
+    <a href="add.php" class="btn-mdg-primary"><i class="fas fa-plus"></i> Tambah Sub Kategori</a>
+  </div>
+  <?php include $rootPath . 'components/alerts.php'; ?>
+  <div class="mdg-table-wrapper">
+    <div class="mdg-table-header"><h5><i class="fas fa-list me-2"></i>Data Sub Kategori</h5></div>
+    <div class="table-responsive p-3">
+      <table class="table mdg-table mdg-datatable">
+        <thead><tr>
+          <th>ID</th>
+          <th>Nama Sub Kategori</th>
+          <th>Category ID</th>
+          <th>Catatan</th>
+          <th>Aksi</th>
+        </tr></thead>
+        <tbody>
         <?php
-        $sql = "SELECT * FROM $table ORDER BY $primary_key ASC";
+        $sql    = "SELECT * FROM $table ORDER BY $primary_key ASC";
         $result = mysqli_query($conn, $sql);
-
-        while ($row = mysqli_fetch_assoc($result)) {
-            echo "<tr>";
-            echo "<td>" . $row['Sub_Category_ID'] . "</td>";
-            echo "<td>" . $row['Category_ID'] . "</td>";
-            echo "<td>" . htmlspecialchars($row['Sub_Name']) . "</td>";
-            echo "<td>" . htmlspecialchars($row['Notes']) . "</td>";
-            echo "<td>
-                    <a href='edit.php?id=" . $row['Sub_Category_ID'] . "'>Edit</a> | 
-                    <a href='delete.php?id=" . $row['Sub_Category_ID'] . "' 
-                       onclick=\"return confirm('Yakin ingin menghapus sub category ini?')\">Hapus</a>
-                  </td>";
-            echo "</tr>";
-        }
+        while ($row = mysqli_fetch_assoc($result)):
         ?>
-    </table>
-
-    <br>
-    <a href="index.php">Refresh</a>
-</body>
-</html>
+          <tr>
+            <td><?= e($row['Sub_Category_ID'] ?? '') ?></td>
+            <td><?= e($row['Sub_Name'] ?? '') ?></td>
+            <td><?= e($row['Category_ID'] ?? '') ?></td>
+            <td><?= e($row['Notes'] ?? '') ?></td>
+            <td>
+              <a href="edit.php?id=<?= (int)$row['Sub_Category_ID'] ?>" class="btn-mdg-secondary" style="padding:.3rem .7rem;font-size:.78rem"><i class="fas fa-pen"></i> Edit</a>
+              <a href="delete.php?id=<?= (int)$row['Sub_Category_ID'] ?>" class="btn-mdg-danger" style="padding:.3rem .7rem;font-size:.78rem" onclick="return confirmDelete('Sub Kategori #<?= (int)$row['Sub_Category_ID'] ?>')"><i class="fas fa-trash"></i> Hapus</a>
+            </td>
+          </tr>
+        <?php endwhile; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+<?php include $rootPath . 'components/footer.php'; ?>
+</div>
+</div>
