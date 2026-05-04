@@ -1,6 +1,6 @@
 <?php
+require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/category.php';
-if (session_status() === PHP_SESSION_NONE) session_start();
 if (isset($_GET['id'])) {
     $id  = (int)$_GET['id'];
     $sql = "DELETE FROM $table WHERE $primary_key = $id";
