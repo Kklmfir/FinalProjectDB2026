@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS budget, category, contact, debt_loan, goal, pocket, sub_cat
 
 -- 1. POCKET
 CREATE TABLE Pocket (
-    Pocket_ID INT NOT NULL,
+    Pocket_ID INT NOT NULL AUTO_INCREMENT,
     Pocket_Name VARCHAR(200) NOT NULL,
     Balance FLOAT NOT NULL,
     Max_Budget FLOAT NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE Pocket (
 
 -- 2. CATEGORY
 CREATE TABLE Category (
-    Category_ID INT NOT NULL ,
+    Category_ID INT NOT NULL AUTO_INCREMENT,
     Category_Name VARCHAR(200) NOT NULL,
     Category_Type VARCHAR(200) NOT NULL,
     Icon_Code VARCHAR(50) NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE Category (
 
 -- 3. TRANSACTIONS
 CREATE TABLE Transactions (
-    Transaction_ID INT NOT NULL ,
+    Transaction_ID INT NOT NULL AUTO_INCREMENT,
     Pocket_ID INT NOT NULL,
     Category_ID INT NOT NULL,
     Amount FLOAT NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE Transactions (
 
 -- 4. GOAL
 CREATE TABLE Goal (
-    Goal_ID INT NOT NULL ,
+    Goal_ID INT NOT NULL AUTO_INCREMENT,
     Pocket_ID INT NOT NULL,
     Goal_Name VARCHAR(200) NOT NULL,
     Target_Amount FLOAT NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE Goal (
 
 -- 5. CONTACT
 CREATE TABLE Contact (
-    Contact_ID INT NOT NULL ,
+    Contact_ID INT NOT NULL AUTO_INCREMENT,
     Contact_Name VARCHAR(200) NOT NULL,
     Phone_Number VARCHAR(200) NOT NULL,
     Relation_Type VARCHAR(200) NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE Contact (
 
 -- 6. DEBT_LOAN
 CREATE TABLE Debt_Loan (
-    Debt_ID INT NOT NULL ,
+    Debt_ID INT NOT NULL AUTO_INCREMENT,
     Contact_ID INT NOT NULL,
     Pocket_ID INT NOT NULL,
     Debt_Category INT NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE Debt_Loan (
 
 -- 7. BUDGET
 CREATE TABLE Budget (
-    Budget_ID INT NOT NULL ,
+    Budget_ID INT NOT NULL AUTO_INCREMENT,
     Category_ID INT NOT NULL,
     Monthly_Limit FLOAT NOT NULL,
     Start_Date DATE NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE Budget (
 
 -- 8. TRANSFER
 CREATE TABLE Transfer (
-    Transfer_ID INT NOT NULL ,
+    Transfer_ID INT NOT NULL AUTO_INCREMENT,
     Source_Pocket_ID INT NOT NULL,
     Target_Pocket_ID INT NOT NULL,
     Transfer_Amount FLOAT NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE Transfer (
 
 -- 9. SUB_CATEGORY
 CREATE TABLE Sub_Category (
-    Sub_Category_ID INT NOT NULL ,
+    Sub_Category_ID INT NOT NULL AUTO_INCREMENT,
     Category_ID INT NOT NULL,
     Sub_Name VARCHAR(200) NOT NULL,
     Notes TEXT NOT NULL,

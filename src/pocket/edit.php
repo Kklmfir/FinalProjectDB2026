@@ -2,6 +2,7 @@
 /**
  * src/pocket/edit.php — Edit Pocket
  */
+require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/pocket.php';
 require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';

@@ -13,9 +13,7 @@
  *   include 'components/alerts.php';
  */
 
-// Muat flash messages dari session jika ada
-if (session_status() === PHP_SESSION_NONE) session_start();
-
+// Muat flash messages dari session (session dimulai oleh bootstrap.php)
 $flashTypes = ['success', 'error', 'warning', 'info'];
 
 foreach ($flashTypes as $type) {
