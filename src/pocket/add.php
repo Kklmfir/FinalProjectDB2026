@@ -1,11 +1,13 @@
 <?php
 /**
  * src/pocket/add.php — Tambah Pocket Baru
+ * MySQLi with prepared statements
  */
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/pocket.php';
 require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
+require_once __DIR__ . '/../../helpers/dropdown_helper.php';
 
 $pageTitle  = 'Tambah Pocket';
 $activePage = 'pocket';
@@ -13,20 +15,55 @@ $rootPath   = '../../';
 $alertError = '';
 
 if (isset($_POST['submit'])) {
-    $Pocket_Name  = mysqli_real_escape_string($conn, sanitizeInput($_POST['Pocket_Name'] ?? ''));
+    // Validate input
+    $Pocket_Name  = sanitizeInput($_POST['Pocket_Name'] ?? '');
     $Balance      = sanitizeFloat($_POST['Balance'] ?? 0);
     $Max_Budget   = sanitizeFloat($_POST['Max_Budget'] ?? 0);
     $Created_Date = sanitizeInput($_POST['Created_Date'] ?? '');
-
-    $sql = "INSERT INTO $table (Pocket_Name, Balance, Max_Budget, Created_Date)
-            VALUES ('$Pocket_Name', $Balance, $Max_Budget, '$Created_Date')";
-
-    if (mysqli_query($conn, $sql)) {
-        $_SESSION['flash_success'] = 'Pocket baru berhasil ditambahkan!';
-        header('Location: index.php');
-        exit;
+    
+    $errors = [];
+    if (empty($Pocket_Name)) $errors[] = 'Nama kantong tidak boleh kosong.';
+    if (empty($Created_Date)) $errors[] = 'Tanggal tidak boleh kosong.';
+    
+    if (empty($errors)) {
+        try {
+            // Prepare statement
+            $stmt = mysqli_prepare(
+                $conn,
+                "INSERT INTO $table (Pocket_Name, Balance, Max_Budget, Created_Date) VALUES (?, ?, ?, ?)"
+            );
+            
+            if (!$stmt) {
+                throw new Exception('Database prepare error: ' . mysqli_error($conn));
+            }
+            
+            // Bind parameters: s=string, d=double
+            mysqli_stmt_bind_param(
+                $stmt,
+                'sdds',
+                $Pocket_Name,
+                $Balance,
+                $Max_Budget,
+                $Created_Date
+            );
+            
+            // Execute
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception('Database execute error: ' . mysqli_error($conn));
+            }
+            
+            mysqli_stmt_close($stmt);
+            
+            $_SESSION['flash_success'] = 'Pocket baru berhasil ditambahkan!';
+            header('Location: index.php');
+            exit;
+            
+        } catch (Throwable $e) {
+            error_log('Pocket add error: ' . $e->getMessage());
+            $alertError = 'Gagal menyimpan data. Silakan coba lagi.';
+        }
     } else {
-        $alertError = 'Gagal menyimpan: ' . mysqli_error($conn);
+        $alertError = implode(' ', $errors);
     }
 }
 
@@ -70,17 +107,14 @@ include $rootPath . 'components/header.php';
                     <label class="form-label">Maksimal Budget (Rp)</label>
                     <input type="number" class="form-control" name="Max_Budget"
                            value="<?= e($_POST['Max_Budget'] ?? '0') ?>" step="0.01" min="0">
-                    <div class="form-text-hint">Batas maksimum saldo pada kantong ini (opsional).</div>
                 </div>
                 <div class="mdg-form-group">
-                    <label class="form-label">Tanggal Dibuat <span class="text-danger">*</span></label>
-                    <input type="datetime-local" class="form-control" name="Created_Date"
-                           value="<?= e($_POST['Created_Date'] ?? date('Y-m-d\TH:i')) ?>" required>
+                    <label class="form-label">Tanggal <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" name="Created_Date"
+                           value="<?= e($_POST['Created_Date'] ?? '') ?>" required>
                 </div>
                 <div class="d-flex gap-2 mt-3">
-                    <button type="submit" name="submit" class="btn-mdg-primary">
-                        <i class="fas fa-save"></i> Simpan Pocket
-                    </button>
+                    <button type="submit" name="submit" class="btn-mdg-primary"><i class="fas fa-save"></i> Simpan</button>
                     <a href="index.php" class="btn-mdg-secondary">Batal</a>
                 </div>
             </form>

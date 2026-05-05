@@ -1,97 +1,172 @@
 <?php
 /**
  * dropdown_helper.php
- * Helper functions untuk mengambil data dropdown dari database (PDO)
+ * MySQLi-based dropdown/option generator
+ * 
+ * Provides helper functions to safely fetch dropdown options
+ * using prepared statements
  */
 
 /**
- * Validasi bahwa string hanya mengandung karakter aman untuk identifier SQL
- * (huruf, angka, underscore). Mencegah SQL injection pada nama tabel/kolom.
- *
- * @throws InvalidArgumentException jika identifier tidak valid
+ * Get options from database using prepared statement
+ * 
+ * @param mysqli $conn - MySQLi connection object
+ * @param string $table - Table name
+ * @param string $id_field - Primary key field name
+ * @param string $name_field - Display field name
+ * @param array $where - Optional WHERE conditions ['column' => 'value']
+ * @return array Array of rows with [id_field, name_field]
  */
-function validateSqlIdentifier(string $identifier): string
+function getOptions($conn, $table, $id_field, $name_field, $where = [])
 {
-    if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $identifier)) {
-        throw new InvalidArgumentException("Identifier SQL tidak valid: $identifier");
-    }
-    return $identifier;
-}
-
-/**
- * Ambil semua baris dari tabel sebagai array asosiatif.
- *
- * @param PDO    $conn       Koneksi PDO
- * @param string $table      Nama tabel
- * @param string $id_field   Nama kolom ID
- * @param string $name_field Nama kolom label/nama
- * @return array
- */
-function getOptions(PDO $conn, string $table, string $id_field, string $name_field): array
-{
+    $options = [];
+    
     try {
-        $table      = validateSqlIdentifier($table);
-        $id_field   = validateSqlIdentifier($id_field);
-        $name_field = validateSqlIdentifier($name_field);
-        $query = "SELECT `$id_field`, `$name_field` FROM `$table`";
-        $stmt  = $conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {
-        return [];
-    }
-}
-
-/**
- * Ambil semua baris dari tabel dan format label sebagai "id - name".
- *
- * @param PDO    $conn       Koneksi PDO
- * @param string $table      Nama tabel
- * @param string $id_field   Nama kolom ID
- * @param string $name_field Nama kolom label/nama
- * @return array  Array berisi ['id' => ..., 'label' => 'id - name']
- */
-function getOptionsWithFormat(PDO $conn, string $table, string $id_field, string $name_field): array
-{
-    try {
-        $table      = validateSqlIdentifier($table);
-        $id_field   = validateSqlIdentifier($id_field);
-        $name_field = validateSqlIdentifier($name_field);
-        $query = "SELECT `$id_field`, `$name_field` FROM `$table`";
-        $stmt  = $conn->prepare($query);
-        $stmt->execute();
-        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $options = [];
-        foreach ($results as $row) {
-            $options[] = [
-                'id'    => $row[$id_field],
-                'label' => $row[$id_field] . ' - ' . $row[$name_field],
-            ];
+        // Build query
+        $query = "SELECT $id_field, $name_field FROM $table";
+        
+        // Add WHERE conditions if provided
+        if (!empty($where)) {
+            $conditions = [];
+            foreach ($where as $col => $val) {
+                $conditions[] = "$col = ?";
+            }
+            $query .= " WHERE " . implode(" AND ", $conditions);
         }
-        return $options;
+        
+        $query .= " ORDER BY $name_field ASC";
+        
+        // Prepare and execute
+        $stmt = mysqli_prepare($conn, $query);
+        
+        if (!$stmt) {
+            error_log("Prepare Error in getOptions: " . mysqli_error($conn));
+            return $options;
+        }
+        
+        // Bind WHERE parameters if any
+        if (!empty($where)) {
+            $types = '';
+            $values = [];
+            foreach ($where as $col => $val) {
+                $types .= 's';  // Assume string type
+                $values[] = $val;
+            }
+            mysqli_stmt_bind_param($stmt, $types, ...$values);
+        }
+        
+        // Execute
+        if (!mysqli_stmt_execute($stmt)) {
+            error_log("Execute Error in getOptions: " . mysqli_error($conn));
+            return $options;
+        }
+        
+        // Get result
+        $result = mysqli_stmt_get_result($stmt);
+        
+        while ($row = mysqli_fetch_assoc($result)) {
+            $options[] = $row;
+        }
+        
+        mysqli_stmt_close($stmt);
+        
     } catch (Exception $e) {
-        return [];
+        error_log("Exception in getOptions: " . $e->getMessage());
     }
+    
+    return $options;
 }
 
 /**
- * Render HTML <option> tags dari array yang dikembalikan getOptionsWithFormat().
- * Otomatis menandai opsi yang dipilih (selected).
- *
- * @param array  $options     Array dari getOptionsWithFormat()
- * @param mixed  $selected    Nilai yang sedang dipilih
- * @param string $placeholder Teks opsi default (value="0")
- * @return string HTML string dari semua <option>
+ * Format options for rendering in select HTML
+ * Converts database rows to standardized format
+ * 
+ * @param array $data - Array of rows from getOptions()
+ * @param string $id_field - Primary key field name
+ * @param string $name_field - Display field name
+ * @param string $format - Format pattern: 'id_name' (default) or 'name'
+ * @return array Array of ['id' => value, 'label' => display_text]
  */
-function renderOptions(array $options, mixed $selected = 0, string $placeholder = '-- Pilih --'): string
+function formatOptions($data, $id_field, $name_field, $format = 'id_name')
 {
-    $html = '<option value="0">' . htmlspecialchars($placeholder, ENT_QUOTES, 'UTF-8') . '</option>';
-    foreach ($options as $opt) {
-        $sel   = ((string)$opt['id'] === (string)$selected) ? ' selected' : '';
-        $html .= '<option value="' . htmlspecialchars((string)$opt['id'], ENT_QUOTES, 'UTF-8') . '"' . $sel . '>'
-               . htmlspecialchars($opt['label'], ENT_QUOTES, 'UTF-8')
-               . '</option>';
+    $formatted = [];
+    
+    foreach ($data as $row) {
+        $id = $row[$id_field] ?? '';
+        $name = $row[$name_field] ?? '';
+        
+        // Format label based on pattern
+        $label = match($format) {
+            'name' => $name,
+            'id_name' => "$id - $name",
+            default => "$id - $name"
+        };
+        
+        $formatted[] = [
+            'id' => $id,
+            'label' => $label
+        ];
     }
+    
+    return $formatted;
+}
+
+/**
+ * Render HTML select options from formatted data
+ * 
+ * @param array $options - Formatted options from formatOptions()
+ * @param mixed $selected - Currently selected value (default null)
+ * @param string $placeholder - Placeholder option text
+ * @return string HTML option tags
+ */
+function renderOptions($options, $selected = null, $placeholder = '-- Pilih --')
+{
+    $html = '';
+    
+    if ($placeholder) {
+        $html .= '<option value="">'.htmlspecialchars($placeholder).'</option>';
+    }
+    
+    foreach ($options as $opt) {
+        $isSelected = ($selected == $opt['id']) ? 'selected' : '';
+        $html .= '<option value="'.htmlspecialchars($opt['id']).'" '.$isSelected.'>';
+        $html .= htmlspecialchars($opt['label']);
+        $html .= '</option>';
+    }
+    
     return $html;
+}
+
+/**
+ * Get single option value by ID
+ * Useful for displaying current value in forms
+ * 
+ * @param mysqli $conn - MySQLi connection
+ * @param string $table - Table name
+ * @param string $id_field - Primary key field
+ * @param string $name_field - Display field
+ * @param mixed $id - ID to lookup
+ * @return string|null Display text or null if not found
+ */
+function getOptionLabel($conn, $table, $id_field, $name_field, $id)
+{
+    $query = "SELECT $name_field FROM $table WHERE $id_field = ? LIMIT 1";
+    $stmt = mysqli_prepare($conn, $query);
+    
+    if (!$stmt) {
+        error_log("Prepare Error in getOptionLabel: " . mysqli_error($conn));
+        return null;
+    }
+    
+    mysqli_stmt_bind_param($stmt, 's', $id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    
+    if ($row = mysqli_fetch_assoc($result)) {
+        mysqli_stmt_close($stmt);
+        return $row[$name_field];
+    }
+    
+    mysqli_stmt_close($stmt);
+    return null;
 }
