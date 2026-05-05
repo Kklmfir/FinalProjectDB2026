@@ -5,6 +5,20 @@
  */
 
 /**
+ * Validasi bahwa string hanya mengandung karakter aman untuk identifier SQL
+ * (huruf, angka, underscore). Mencegah SQL injection pada nama tabel/kolom.
+ *
+ * @throws InvalidArgumentException jika identifier tidak valid
+ */
+function validateSqlIdentifier(string $identifier): string
+{
+    if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $identifier)) {
+        throw new InvalidArgumentException("Identifier SQL tidak valid: $identifier");
+    }
+    return $identifier;
+}
+
+/**
  * Ambil semua baris dari tabel sebagai array asosiatif.
  *
  * @param PDO    $conn       Koneksi PDO
@@ -16,7 +30,10 @@
 function getOptions(PDO $conn, string $table, string $id_field, string $name_field): array
 {
     try {
-        $query = "SELECT $id_field, $name_field FROM $table";
+        $table      = validateSqlIdentifier($table);
+        $id_field   = validateSqlIdentifier($id_field);
+        $name_field = validateSqlIdentifier($name_field);
+        $query = "SELECT `$id_field`, `$name_field` FROM `$table`";
         $stmt  = $conn->prepare($query);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -37,7 +54,10 @@ function getOptions(PDO $conn, string $table, string $id_field, string $name_fie
 function getOptionsWithFormat(PDO $conn, string $table, string $id_field, string $name_field): array
 {
     try {
-        $query = "SELECT $id_field, $name_field FROM $table";
+        $table      = validateSqlIdentifier($table);
+        $id_field   = validateSqlIdentifier($id_field);
+        $name_field = validateSqlIdentifier($name_field);
+        $query = "SELECT `$id_field`, `$name_field` FROM `$table`";
         $stmt  = $conn->prepare($query);
         $stmt->execute();
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
