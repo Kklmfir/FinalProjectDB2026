@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/dropdown_helper.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 $pageTitle='Tambah Hutang/Piutang'; $activePage='debt_loan'; $rootPath='../../'; $alertError='';
 $pdo = getDB();
 $contactOptions     = getOptionsWithFormat($pdo, 'Contact',      'Contact_ID',      'Contact_Name');
@@ -25,8 +26,10 @@ if (isset($_POST['submit'])) {
     if (empty($Due_Date))    $errors[] = 'Tanggal Jatuh Tempo tidak boleh kosong.';
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO $table (Contact_ID, Pocket_ID, Debt_Category, Amount, Due_Date, Status) VALUES (?,?,?,?,?,?)");
-            $stmt->execute([$Contact_ID, $Pocket_ID, $Debt_Category, $Amount, $Due_Date, $Status]);
+            acquireSequentialIdAndInsert($pdo, 'debt_loan', function(int $newId) use ($pdo, $Contact_ID, $Pocket_ID, $Debt_Category, $Amount, $Due_Date, $Status) {
+                $stmt = $pdo->prepare("INSERT INTO Debt_Loan (Debt_ID, Contact_ID, Pocket_ID, Debt_Category, Amount, Due_Date, Status) VALUES (?,?,?,?,?,?,?)");
+                $stmt->execute([$newId, $Contact_ID, $Pocket_ID, $Debt_Category, $Amount, $Due_Date, $Status]);
+            });
             $_SESSION['flash_success']='Hutang/Piutang berhasil ditambahkan!';
             header('Location: index.php'); exit;
         } catch (Exception $e) {

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/dropdown_helper.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 $pageTitle='Tambah Goal'; $activePage='goal'; $rootPath='../../'; $alertError='';
 $pdo = getDB();
 $pocketOptions = getOptionsWithFormat($pdo, 'Pocket', 'Pocket_ID', 'Pocket_Name');
@@ -20,8 +21,10 @@ if (isset($_POST['submit'])) {
     if (empty($Deadline_Date)) $errors[] = 'Deadline tidak boleh kosong.';
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO $table (Pocket_ID, Goal_Name, Target_Amount, Deadline_Date) VALUES (?,?,?,?)");
-            $stmt->execute([$Pocket_ID, $Goal_Name, $Target_Amount, $Deadline_Date]);
+            acquireSequentialIdAndInsert($pdo, 'goal', function(int $newId) use ($pdo, $Pocket_ID, $Goal_Name, $Target_Amount, $Deadline_Date) {
+                $stmt = $pdo->prepare("INSERT INTO Goal (Goal_ID, Pocket_ID, Goal_Name, Target_Amount, Deadline_Date) VALUES (?,?,?,?,?)");
+                $stmt->execute([$newId, $Pocket_ID, $Goal_Name, $Target_Amount, $Deadline_Date]);
+            });
             $_SESSION['flash_success']='Goal berhasil ditambahkan!';
             header('Location: index.php'); exit;
         } catch (Exception $e) {

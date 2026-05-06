@@ -1,64 +1,40 @@
 <?php
 /**
  * src/pocket/add.php — Tambah Pocket Baru
- * MySQLi with prepared statements
  */
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/pocket.php';
 require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
-require_once __DIR__ . '/../../helpers/dropdown_helper.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 
 $pageTitle  = 'Tambah Pocket';
 $activePage = 'pocket';
 $rootPath   = '../../';
 $alertError = '';
+$pdo = getDB();
 
 if (isset($_POST['submit'])) {
-    // Validate input
     $Pocket_Name  = sanitizeInput($_POST['Pocket_Name'] ?? '');
     $Balance      = sanitizeFloat($_POST['Balance'] ?? 0);
     $Max_Budget   = sanitizeFloat($_POST['Max_Budget'] ?? 0);
     $Created_Date = sanitizeInput($_POST['Created_Date'] ?? '');
-    
+
     $errors = [];
     if (empty($Pocket_Name)) $errors[] = 'Nama kantong tidak boleh kosong.';
     if (empty($Created_Date)) $errors[] = 'Tanggal tidak boleh kosong.';
-    
+
     if (empty($errors)) {
         try {
-            // Prepare statement
-            $stmt = mysqli_prepare(
-                $conn,
-                "INSERT INTO $table (Pocket_Name, Balance, Max_Budget, Created_Date) VALUES (?, ?, ?, ?)"
-            );
-            
-            if (!$stmt) {
-                throw new Exception('Database prepare error: ' . mysqli_error($conn));
-            }
-            
-            // Bind parameters: s=string, d=double
-            mysqli_stmt_bind_param(
-                $stmt,
-                'sdds',
-                $Pocket_Name,
-                $Balance,
-                $Max_Budget,
-                $Created_Date
-            );
-            
-            // Execute
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception('Database execute error: ' . mysqli_error($conn));
-            }
-            
-            mysqli_stmt_close($stmt);
-            
+            acquireSequentialIdAndInsert($pdo, 'pocket', function(int $newId) use ($pdo, $Pocket_Name, $Balance, $Max_Budget, $Created_Date) {
+                $stmt = $pdo->prepare("INSERT INTO Pocket (Pocket_ID, Pocket_Name, Balance, Max_Budget, Created_Date) VALUES (?,?,?,?,?)");
+                $stmt->execute([$newId, $Pocket_Name, $Balance, $Max_Budget, $Created_Date]);
+            });
             $_SESSION['flash_success'] = 'Pocket baru berhasil ditambahkan!';
             header('Location: index.php');
             exit;
-            
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             error_log('Pocket add error: ' . $e->getMessage());
             $alertError = 'Gagal menyimpan data. Silakan coba lagi.';
         }
