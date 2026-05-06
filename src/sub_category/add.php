@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/dropdown_helper.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 $pageTitle='Tambah Sub Kategori'; $activePage='sub_category'; $rootPath='../../'; $alertError='';
 $pdo = getDB();
 $categoryOptions = getOptionsWithFormat($pdo, 'Category', 'Category_ID', 'Category_Name');
@@ -17,8 +18,10 @@ if (isset($_POST['submit'])) {
     if (empty($Sub_Name))  $errors[] = 'Nama Sub Kategori tidak boleh kosong.';
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO $table (Category_ID, Sub_Name, Notes) VALUES (?,?,?)");
-            $stmt->execute([$Category_ID, $Sub_Name, $Notes]);
+            acquireSequentialIdAndInsert($pdo, 'sub_category', function(int $newId) use ($pdo, $Category_ID, $Sub_Name, $Notes) {
+                $stmt = $pdo->prepare("INSERT INTO Sub_Category (Sub_Category_ID, Category_ID, Sub_Name, Notes) VALUES (?,?,?,?)");
+                $stmt->execute([$newId, $Category_ID, $Sub_Name, $Notes]);
+            });
             $_SESSION['flash_success']='Sub Kategori berhasil ditambahkan!';
             header('Location: index.php'); exit;
         } catch (Exception $e) {

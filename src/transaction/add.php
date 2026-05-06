@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/dropdown_helper.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 $pageTitle='Tambah Transaksi'; $activePage='transaction'; $rootPath='../../'; $alertError='';
 $pdo = getDB();
 $pocketOptions   = getOptionsWithFormat($pdo, 'Pocket',   'Pocket_ID',   'Pocket_Name');
@@ -23,8 +24,10 @@ if (isset($_POST['submit'])) {
     if (empty($System_Log)) $errors[] = 'Tanggal & Waktu tidak boleh kosong.';
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO $table (Pocket_ID, Category_ID, Amount, System_Log, Description, Warning_Status) VALUES (?,?,?,?,?,?)");
-            $stmt->execute([$Pocket_ID, $Category_ID, $Amount, $System_Log, $Description, $Warning_Status]);
+            acquireSequentialIdAndInsert($pdo, 'transactions', function(int $newId) use ($pdo, $Pocket_ID, $Category_ID, $Amount, $System_Log, $Description, $Warning_Status) {
+                $stmt = $pdo->prepare("INSERT INTO Transactions (Transaction_ID, Pocket_ID, Category_ID, Amount, System_Log, Description, Warning_Status) VALUES (?,?,?,?,?,?,?)");
+                $stmt->execute([$newId, $Pocket_ID, $Category_ID, $Amount, $System_Log, $Description, $Warning_Status]);
+            });
             $_SESSION['flash_success']='Transaksi berhasil ditambahkan!';
             header('Location: index.php'); exit;
         } catch (Exception $e) {

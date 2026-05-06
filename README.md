@@ -106,10 +106,56 @@ FinalProjectDB2026/
 - `Goal`
 - `Contact`
 - `Debt_Loan`
+- `counters` — application-managed sequential ID table (see below)
 
 > Notes:
 > - Table names in SQL use **Capitalization** (e.g., `Pocket`, `Category`).
 > - Some environments are case-sensitive; keep naming consistent.
+
+---
+
+## 🔢 Sequential ID System (Counter Table)
+
+All CREATE forms use an application-managed gapless sequential ID system instead of `AUTO_INCREMENT`.
+This is implemented via the **Counter Table + `SELECT … FOR UPDATE`** pattern, which is portable
+between MySQL InnoDB (local) and PostgreSQL/Supabase.
+
+### How it works
+
+1. A `counters` table stores one row per entity (`name`, `current_value`).
+2. On each INSERT, `helpers/counter_helper.php::acquireSequentialIdAndInsert()`:
+   - Starts a transaction.
+   - Locks the counter row with `SELECT … FOR UPDATE` (row-level lock).
+   - Increments `current_value` and obtains the new ID.
+   - Calls the caller-supplied callback to perform the actual `INSERT` with the new ID.
+   - COMMITs. If anything fails, the transaction is rolled back — **no gaps**.
+   - Retries up to 3 times (with 100 ms back-off) on deadlock/serialisation errors.
+
+### Syncing counters after backup/restore
+
+After restoring an entity table from a backup, the counter **must** be re-synced so it is
+`>= MAX(id)` in the restored table. Otherwise the next application insert will collide.
+
+**MySQL / InnoDB:**
+```sql
+INSERT INTO counters (name, current_value)
+  VALUES ('transactions', (SELECT COALESCE(MAX(Transaction_ID), 0) FROM Transactions))
+  ON DUPLICATE KEY UPDATE current_value = VALUES(current_value);
+```
+
+**PostgreSQL / Supabase:**
+```sql
+INSERT INTO counters (name, current_value)
+  VALUES ('transactions', (SELECT COALESCE(MAX("Transaction_ID"), 0) FROM "Transactions"))
+  ON CONFLICT (name) DO UPDATE SET current_value = EXCLUDED.current_value;
+```
+
+Repeat for every entity: `pocket`, `category`, `sub_category`, `contact`, `goal`, `budget`, `debt_loan`, `transfer`.
+
+### Initial migration (fresh deployment)
+
+Run `sql-with-dummy.sql` in full — it creates the `counters` table and seeds every counter
+with the `MAX(id)` value matching the bundled dummy data.
 
 ---
 

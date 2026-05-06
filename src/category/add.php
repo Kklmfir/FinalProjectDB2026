@@ -1,62 +1,40 @@
 <?php
 /**
  * src/category/add.php — Tambah Kategori Baru
- * MySQLi with prepared statements
  */
 require_once __DIR__ . '/../../config/bootstrap.php';
 require_once __DIR__ . '/category.php';
 require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 
 $pageTitle  = 'Tambah Kategori';
 $activePage = 'category';
 $rootPath   = '../../';
 $alertError = '';
+$pdo = getDB();
 
 if (isset($_POST['submit'])) {
-    // Validate input
     $Category_Name = sanitizeInput($_POST['Category_Name'] ?? '');
     $Category_Type = sanitizeInput($_POST['Category_Type'] ?? '');
     $Icon_Code     = sanitizeInput($_POST['Icon_Code'] ?? '');
-    
+
     $errors = [];
     if (empty($Category_Name)) $errors[] = 'Nama kategori tidak boleh kosong.';
     if (empty($Category_Type)) $errors[] = 'Tipe kategori harus dipilih.';
-    if (empty($Icon_Code)) $errors[] = 'Icon code tidak boleh kosong.';
-    
+    if (empty($Icon_Code))     $errors[] = 'Icon code tidak boleh kosong.';
+
     if (empty($errors)) {
         try {
-            // Prepare statement
-            $stmt = mysqli_prepare(
-                $conn,
-                "INSERT INTO $table (Category_Name, Category_Type, Icon_Code) VALUES (?, ?, ?)"
-            );
-            
-            if (!$stmt) {
-                throw new Exception('Database prepare error: ' . mysqli_error($conn));
-            }
-            
-            // Bind parameters (all strings)
-            mysqli_stmt_bind_param(
-                $stmt,
-                'sss',
-                $Category_Name,
-                $Category_Type,
-                $Icon_Code
-            );
-            
-            // Execute
-            if (!mysqli_stmt_execute($stmt)) {
-                throw new Exception('Database execute error: ' . mysqli_error($conn));
-            }
-            
-            mysqli_stmt_close($stmt);
-            
+            acquireSequentialIdAndInsert($pdo, 'category', function(int $newId) use ($pdo, $Category_Name, $Category_Type, $Icon_Code) {
+                $stmt = $pdo->prepare("INSERT INTO Category (Category_ID, Category_Name, Category_Type, Icon_Code) VALUES (?,?,?,?)");
+                $stmt->execute([$newId, $Category_Name, $Category_Type, $Icon_Code]);
+            });
             $_SESSION['flash_success'] = 'Kategori berhasil ditambahkan!';
             header('Location: index.php');
             exit;
-            
-        } catch (Throwable $e) {
+        } catch (Exception $e) {
             error_log('Category add error: ' . $e->getMessage());
             $alertError = 'Gagal menyimpan data. Silakan coba lagi.';
         }
@@ -79,7 +57,7 @@ include $rootPath . 'components/header.php';
         </div>
         <a href="index.php" class="btn-mdg-secondary"><i class="fas fa-arrow-left"></i> Kembali</a>
     </div>
-    
+
     <?php include $rootPath . 'components/alerts.php'; ?>
 
     <div class="mdg-card" style="max-width:560px">

@@ -8,6 +8,34 @@
  */
 
 /**
+ * Get formatted options from database using PDO (portable MySQL/PostgreSQL).
+ * Returns array of ['id' => value, 'label' => 'id - name'] for use with renderOptions().
+ *
+ * @param PDO    $pdo        PDO connection
+ * @param string $table      Table name
+ * @param string $id_field   Primary key field name
+ * @param string $name_field Display field name
+ * @return array Array of ['id' => value, 'label' => 'id - name']
+ */
+function getOptionsWithFormat(PDO $pdo, string $table, string $id_field, string $name_field): array
+{
+    $options = [];
+    try {
+        $stmt = $pdo->prepare("SELECT {$id_field}, {$name_field} FROM {$table} ORDER BY {$name_field} ASC");
+        $stmt->execute();
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as $row) {
+            $id    = $row[$id_field] ?? '';
+            $name  = $row[$name_field] ?? '';
+            $options[] = ['id' => $id, 'label' => "{$id} - {$name}"];
+        }
+    } catch (Exception $e) {
+        error_log("getOptionsWithFormat error ({$table}): " . $e->getMessage());
+    }
+    return $options;
+}
+
+/**
  * Get options from database using prepared statement
  * 
  * @param mysqli $conn - MySQLi connection object

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/dropdown_helper.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 $pageTitle='Tambah Transfer'; $activePage='transfer'; $rootPath='../../'; $alertError='';
 $pdo = getDB();
 $pocketOptions = getOptionsWithFormat($pdo, 'Pocket', 'Pocket_ID', 'Pocket_Name');
@@ -22,8 +23,10 @@ if (isset($_POST['submit'])) {
     if (empty($Transfer_Date))  $errors[] = 'Tanggal Transfer tidak boleh kosong.';
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO $table (Source_Pocket_ID, Target_Pocket_ID, Transfer_Amount, Transfer_Date) VALUES (?,?,?,?)");
-            $stmt->execute([$Source_Pocket_ID, $Target_Pocket_ID, $Transfer_Amount, $Transfer_Date]);
+            acquireSequentialIdAndInsert($pdo, 'transfer', function(int $newId) use ($pdo, $Source_Pocket_ID, $Target_Pocket_ID, $Transfer_Amount, $Transfer_Date) {
+                $stmt = $pdo->prepare("INSERT INTO Transfer (Transfer_ID, Source_Pocket_ID, Target_Pocket_ID, Transfer_Amount, Transfer_Date) VALUES (?,?,?,?,?)");
+                $stmt->execute([$newId, $Source_Pocket_ID, $Target_Pocket_ID, $Transfer_Amount, $Transfer_Date]);
+            });
             $_SESSION['flash_success']='Transfer berhasil dicatat!';
             header('Location: index.php'); exit;
         } catch (Exception $e) {

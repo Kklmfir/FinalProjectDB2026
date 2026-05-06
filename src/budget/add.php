@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../helpers/functions.php';
 require_once __DIR__ . '/../../helpers/security.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../helpers/dropdown_helper.php';
+require_once __DIR__ . '/../../helpers/counter_helper.php';
 $pageTitle='Tambah Budget'; $activePage='budget'; $rootPath='../../'; $alertError='';
 $pdo = getDB();
 $categoryOptions = getOptionsWithFormat($pdo, 'Category', 'Category_ID', 'Category_Name');
@@ -22,8 +23,10 @@ if (isset($_POST['submit'])) {
         $errors[] = 'Tanggal Selesai tidak boleh sebelum Tanggal Mulai.';
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO $table (Category_ID, Monthly_Limit, Start_Date, End_Date) VALUES (?,?,?,?)");
-            $stmt->execute([$Category_ID, $Monthly_Limit, $Start_Date, $End_Date]);
+            acquireSequentialIdAndInsert($pdo, 'budget', function(int $newId) use ($pdo, $Category_ID, $Monthly_Limit, $Start_Date, $End_Date) {
+                $stmt = $pdo->prepare("INSERT INTO Budget (Budget_ID, Category_ID, Monthly_Limit, Start_Date, End_Date) VALUES (?,?,?,?,?)");
+                $stmt->execute([$newId, $Category_ID, $Monthly_Limit, $Start_Date, $End_Date]);
+            });
             $_SESSION['flash_success']='Budget berhasil ditambahkan!';
             header('Location: index.php'); exit;
         } catch (Exception $e) {
