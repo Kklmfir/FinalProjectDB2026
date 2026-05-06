@@ -28,14 +28,16 @@ if (session_status() === PHP_SESSION_NONE) {
  * Kembalikan mode database aktif ('local' atau 'supabase').
  * Prioritas: session > .env > default 'local'
  */
-function getDBMode(): string
-{
-    if (isset($_SESSION['db_mode'])) {
-        return $_SESSION['db_mode'];
-    }
+if (!function_exists('getDBMode')) {
+    function getDBMode(): string
+    {
+        if (isset($_SESSION['db_mode'])) {
+            return $_SESSION['db_mode'];
+        }
 
-    $mode = env('DB_MODE', 'local');
-    return in_array($mode, ['local', 'supabase']) ? $mode : 'local';
+        $mode = env('DB_MODE', 'local');
+        return in_array($mode, ['local', 'supabase']) ? $mode : 'local';
+    }
 }
 
 /**
@@ -61,36 +63,42 @@ function getDB(): PDO
 /**
  * Alias untuk getDB() — digunakan di halaman CRUD.
  */
-function getDBConn(): PDO
-{
-    return getDB();
+if (!function_exists('getDBConn')) {
+    function getDBConn(): PDO
+    {
+        return getDB();
+    }
 }
 
 /**
  * Switch database mode dan simpan ke session.
  * Dipanggil dari endpoint AJAX atau form switch di dashboard.
  */
-function switchDBMode(string $mode): bool
-{
-    if (!in_array($mode, ['local', 'supabase'])) {
-        return false;
-    }
+if (!function_exists('switchDBMode')) {
+    function switchDBMode(string $mode): bool
+    {
+        if (!in_array($mode, ['local', 'supabase'])) {
+            return false;
+        }
 
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
 
-    $_SESSION['db_mode'] = $mode;
-    return true;
+        $_SESSION['db_mode'] = $mode;
+        return true;
+    }
 }
 
 /**
  * Kembalikan label tampilan untuk mode saat ini.
  */
-function getDBLabel(): string
-{
-    return match (getDBMode()) {
-        'supabase' => 'Supabase (Cloud)',
-        default    => 'MySQL Local',
-    };
+if (!function_exists('getDBLabel')) {
+    function getDBLabel(): string
+    {
+        return match (getDBMode()) {
+            'supabase' => 'Supabase (Cloud)',
+            default    => 'MySQL Local',
+        };
+    }
 }
