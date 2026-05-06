@@ -2,7 +2,7 @@
 -- DROP DATABASE IF EXISTS "final-project-db2026";
 -- CREATE DATABASE "final-project-db2026";
 
-DROP TABLE IF EXISTS budget, category, contact, debt_loan, goal, pocket, sub_category, transactions, transfer;
+DROP TABLE IF EXISTS Budget, Category, Contact, Debt_Loan, Goal, Pocket, Sub_category, Transactions, Transfer, Counters;
 
 -- 1. POCKET
 CREATE TABLE Pocket (
@@ -93,6 +93,16 @@ CREATE TABLE Sub_Category (
     Sub_Name VARCHAR(200) NOT NULL,
     Notes TEXT NOT NULL,
     CONSTRAINT pk_Sub_Category PRIMARY KEY (Sub_Category_ID)
+);
+
+-- 10. COUNTERS (application-managed sequential ID table)
+-- Provides gapless sequential IDs via SELECT ... FOR UPDATE (InnoDB & PostgreSQL).
+-- current_value is initialised to MAX(id) of the corresponding entity table so that
+-- the first application-inserted row gets MAX(id)+1 and never collides with seed data.
+CREATE TABLE Counters (
+    name          VARCHAR(100) NOT NULL,
+    current_value BIGINT       NOT NULL,
+    CONSTRAINT pk_counters PRIMARY KEY (name)
 );
 
 -- ADD FOREIGN KEYS

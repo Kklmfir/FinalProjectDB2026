@@ -2,7 +2,7 @@
 -- DROP DATABASE IF EXISTS "final-project-db2026";
 -- CREATE DATABASE "final-project-db2026";
 
-DROP TABLE IF EXISTS budget, category, contact, debt_loan, goal, pocket, sub_category, transactions, transfer, counters;
+DROP TABLE IF EXISTS Budget, Category, Contact, Debt_Loan, Goal, Pocket, Sub_category, Transactions, Transfer, Counters;
 
 -- 1. POCKET
 CREATE TABLE Pocket (
@@ -93,6 +93,13 @@ CREATE TABLE Sub_Category (
     Sub_Name VARCHAR(200) NOT NULL,
     Notes TEXT NOT NULL,
     CONSTRAINT pk_Sub_Category PRIMARY KEY (Sub_Category_ID)
+);
+
+-- 10. COUNTERS (application-managed sequential ID table)
+CREATE TABLE counters (
+    name          VARCHAR(100) NOT NULL,
+    current_value BIGINT       NOT NULL,
+    CONSTRAINT pk_counters PRIMARY KEY (name)
 );
 
 -- ADD FOREIGN KEYS
@@ -266,16 +273,7 @@ INSERT INTO Transfer (Transfer_ID, Source_Pocket_ID, Target_Pocket_ID, Transfer_
 (709, 8, 5, 400000, '2026-03-20 12:00:00'),
 (710, 2, 7, 150000, '2026-03-21 13:00:00');
 
--- 10. COUNTERS (application-managed sequential ID table)
--- Provides gapless sequential IDs via SELECT ... FOR UPDATE (InnoDB & PostgreSQL).
--- current_value is initialised to MAX(id) of the corresponding entity table so that
--- the first application-inserted row gets MAX(id)+1 and never collides with seed data.
-CREATE TABLE counters (
-    name          VARCHAR(100) NOT NULL,
-    current_value BIGINT       NOT NULL,
-    CONSTRAINT pk_counters PRIMARY KEY (name)
-);
-
+-- 10. COUNTERS
 INSERT INTO counters (name, current_value) VALUES
 ('pocket',       10),   -- MAX(Pocket_ID)       = 10
 ('category',     19),   -- MAX(Category_ID)     = 19
@@ -286,15 +284,3 @@ INSERT INTO counters (name, current_value) VALUES
 ('budget',       610),  -- MAX(Budget_ID)       = 610
 ('debt_loan',    410),  -- MAX(Debt_ID)         = 410
 ('transfer',     710);  -- MAX(Transfer_ID)     = 710
-
--- MIGRATION / RESTORE NOTE:
--- After restoring entity tables from a backup, re-sync counters with:
---   MySQL:
---     INSERT INTO counters (name, current_value)
---       VALUES ('transactions', (SELECT COALESCE(MAX(Transaction_ID), 0) FROM Transactions))
---       ON DUPLICATE KEY UPDATE current_value = VALUES(current_value);
---   PostgreSQL:
---     INSERT INTO counters (name, current_value)
---       VALUES ('transactions', (SELECT COALESCE(MAX("Transaction_ID"), 0) FROM "Transactions"))
---       ON CONFLICT (name) DO UPDATE SET current_value = EXCLUDED.current_value;
--- Repeat for every entity (pocket, category, sub_category, contact, goal, budget, debt_loan, transfer).

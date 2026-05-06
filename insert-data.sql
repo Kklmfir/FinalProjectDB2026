@@ -127,3 +127,27 @@ INSERT INTO Transfer (Transfer_ID, Source_Pocket_ID, Target_Pocket_ID, Transfer_
 (708, 1, 9, 500000, '2026-03-19 11:00:00'),
 (709, 8, 5, 400000, '2026-03-20 12:00:00'),
 (710, 2, 7, 150000, '2026-03-21 13:00:00');
+
+-- 10. COUNTERS
+INSERT INTO Counters (name, current_value) VALUES
+('pocket',       10),   -- MAX(Pocket_ID)       = 10
+('category',     19),   -- MAX(Category_ID)     = 19
+('sub_category', 112),  -- MAX(Sub_Category_ID) = 112
+('contact',      310),  -- MAX(Contact_ID)      = 310
+('transactions', 510),  -- MAX(Transaction_ID)  = 510
+('goal',         210),  -- MAX(Goal_ID)         = 210
+('budget',       610),  -- MAX(Budget_ID)       = 610
+('debt_loan',    410),  -- MAX(Debt_ID)         = 410
+('transfer',     710);  -- MAX(Transfer_ID)     = 710
+
+-- MIGRATION / RESTORE NOTE:
+-- After restoring entity tables from a backup, re-sync counters with:
+--   MySQL:
+--     INSERT INTO counters (name, current_value)
+--       VALUES ('transactions', (SELECT COALESCE(MAX(Transaction_ID), 0) FROM Transactions))
+--       ON DUPLICATE KEY UPDATE current_value = VALUES(current_value);
+--   PostgreSQL:
+--     INSERT INTO counters (name, current_value)
+--       VALUES ('transactions', (SELECT COALESCE(MAX("Transaction_ID"), 0) FROM "Transactions"))
+--       ON CONFLICT (name) DO UPDATE SET current_value = EXCLUDED.current_value;
+-- Repeat for every entity (pocket, category, sub_category, contact, goal, budget, debt_loan, transfer).
